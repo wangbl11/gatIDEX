@@ -123,8 +123,6 @@ Recorder.addEventHandler = function(handlerName, eventName, handler, options) {
 }
 
 
-// TODO: new by another object
-var recorder = new Recorder(window);
 
 // TODO: move to appropriate file
 // show element
@@ -134,4 +132,4 @@ function startShowElement(message, sender, sendResponse){
         return Promise.resolve({result: result});
     }
 }
-browser.runtime.onMessage.addListener(startShowElement);
+//browser.runtime.onMessage.addListener(startShowElement);

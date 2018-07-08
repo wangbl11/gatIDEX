@@ -26,7 +26,7 @@ Recorder.addEventHandler('type', 'change', function(event) {
             if ('input' == tagName && Recorder.inputTypes.indexOf(type) >= 0) {
                 if (event.target.value.length > 0) {
                     this.record("type", this.locatorBuilders.buildAll(event.target), event.target.value);
-    
+
                     // © Chen-Chieh Ping, SideeX Team
                     if (enterTarget != null) {
                         var tempTarget = event.target.parentElement;
@@ -62,6 +62,18 @@ Recorder.addEventHandler('type', 'change', function(event) {
 Recorder.addEventHandler('type', 'input', function(event) {
     //console.log(event.target);
     typeTarget = event.target;
+});
+
+Recorder.addEventHandler('type1', 'input', function(event) {
+	 var target=event.target;
+	 var tagName = target.tagName?target.tagName.toLowerCase():'';
+     var type = target.type;
+     if (target.hasAttribute("contenteditable")&&target.getAttribute("contenteditable")=="true")
+     {
+     	     //target=this.findLocators(target);
+     	     //this.record("type1", target, this.locatorBuilders,'input');
+           this.record("type1", this.locatorBuilders.buildAll(event.target), event.target.value);
+     }
 });
 
 // © Jie-Lin You, SideeX Team
@@ -168,7 +180,7 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
                         if ('input' == tagName && Recorder.inputTypes.indexOf(type) >= 0) {
                             if (typeTarget.value.length > 0) {
                                 this.record("type", this.locatorBuilders.buildAll(typeTarget), typeTarget.value);
-                
+
                                 // © Chen-Chieh Ping, SideeX Team
                                 if (enterTarget != null) {
                                     var tempTarget = typeTarget.parentElement;

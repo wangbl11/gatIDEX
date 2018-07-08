@@ -73,6 +73,7 @@ class BackgroundRecorder {
             return;
         }
         let testCaseId = testCase.id;
+        console.log(this.openedTabIds);
         if (!this.openedTabIds[testCaseId]) {
             return;
         }
@@ -154,11 +155,13 @@ class BackgroundRecorder {
     }
 
     webNavigationOnCreatedNavigationTargetHandler(details) {
+        console.log('in webNavigationOnCreatedNavigationTargetHandler');
         let testCase = getSelectedCase();
         if (!testCase)
             return;
         let testCaseId = testCase.id;
         if (this.openedTabIds[testCaseId][details.sourceTabId] != undefined) {
+
             this.openedTabNames[testCaseId]["win_ser_" + this.openedTabCount[testCaseId]] = details.tabId;
             this.openedTabIds[testCaseId][details.tabId] = "win_ser_" + this.openedTabCount[testCaseId];
             if (details.windowId != undefined) {
@@ -177,15 +180,17 @@ class BackgroundRecorder {
     };
 
     addCommandMessageHandler(message, sender, sendRequest) {
-        if (!message.command || this.openedWindowIds[sender.tab.windowId] == undefined)
+        console.log(message);
+        //|| this.openedWindowIds[sender.tab.windowId] == undefined
+        if (!message.command)
             return;
 
-        if (!getSelectedSuite() || !getSelectedCase()) {
-            let id = "case" + sideex_testCase.count;
-            sideex_testCase.count++;
-            addTestCase("Untitled Test Case", id);
-        }
-
+        // if (!getSelectedSuite() || !getSelectedCase()) {
+        //     let id = "case" + sideex_testCase.count;
+        //     sideex_testCase.count++;
+        //     addTestCase("Untitled Test Case", id);
+        // }
+        //
         let testCaseId = getSelectedCase().id;
 
         if (!this.openedTabIds[testCaseId]) {
@@ -212,78 +217,78 @@ class BackgroundRecorder {
 
         if (this.openedTabIds[testCaseId][sender.tab.id] == undefined)
             return;
-
-        if (message.frameLocation !== this.currentRecordingFrameLocation[testCaseId]) {
-            let newFrameLevels = message.frameLocation.split(':');
-            let oldFrameLevels = this.currentRecordingFrameLocation[testCaseId].split(':');
-            while (oldFrameLevels.length > newFrameLevels.length) {
-                addCommandAuto("selectFrame", [
-                    ["relative=parent"]
-                ], "");
-                oldFrameLevels.pop();
-            }
-            while (oldFrameLevels.length != 0 && oldFrameLevels[oldFrameLevels.length - 1] != newFrameLevels[oldFrameLevels.length - 1]) {
-                addCommandAuto("selectFrame", [
-                    ["relative=parent"]
-                ], "");
-                oldFrameLevels.pop();
-            }
-            while (oldFrameLevels.length < newFrameLevels.length) {
-                addCommandAuto("selectFrame", [
-                    ["index=" + newFrameLevels[oldFrameLevels.length]]
-                ], "");
-                oldFrameLevels.push(newFrameLevels[oldFrameLevels.length]);
-            }
-            this.currentRecordingFrameLocation[testCaseId] = message.frameLocation;
-        }
-
-        //Record: doubleClickAt
-        if (message.command == "doubleClickAt") {
-            var command = getRecordsArray();
-            var select = getSelectedRecord();
-            var length = (select == "") ? getRecordsNum() : select.split("-")[1] - 1;
-            var equaln = getCommandName(command[length - 1]) == getCommandName(command[length - 2]);
-            var equalt = getCommandTarget(command[length - 1]) == getCommandTarget(command[length - 2]);
-            var equalv = getCommandValue(command[length - 1]) == getCommandValue(command[length - 2]);
-            if (getCommandName(command[length - 1]) == "clickAt" && equaln && equalt && equalv) {
-                deleteCommand(command[length - 1].id);
-                deleteCommand(command[length - 2].id);
-                if (select != "") {
-                    var current = document.getElementById(command[length - 2].id)
-                    current.className += ' selected';
-                }
-            }
-        } else if(message.command.includes("Value") && typeof message.value === 'undefined') {
-            sideex_log.error("Error: This element does not have property 'value'. Please change to use storeText command.");
-            return;
-        } else if(message.command.includes("Text") && message.value === '') {
-            sideex_log.error("Error: This element does not have property 'Text'. Please change to use storeValue command.");
-            return;
-        } else if (message.command.includes("store")) {
-            // In Google Chrome, window.prompt() must be triggered in
-            // an actived tabs of front window, so we let panel window been focused
-            browser.windows.update(this.selfWindowId, {focused: true})
-            .then(function() {
-                // Even if window has been focused, window.prompt() still failed.
-                // Delay a little time to ensure that status has been updated 
-                setTimeout(function() {
-                    message.value = prompt("Enter the name of the variable");
-                    if (message.insertBeforeLastCommand) {
-                        addCommandBeforeLastCommand(message.command, message.target, message.value);
-                    } else {
-                        notification(message.command, message.target, message.value);
-                        addCommandAuto(message.command, message.target, message.value);
-                    }
-                }, 100);
-            })
-            return;
-        } 
+        //
+        // if (message.frameLocation !== this.currentRecordingFrameLocation[testCaseId]) {
+        //     let newFrameLevels = message.frameLocation.split(':');
+        //     let oldFrameLevels = this.currentRecordingFrameLocation[testCaseId].split(':');
+        //     while (oldFrameLevels.length > newFrameLevels.length) {
+        //         addCommandAuto("selectFrame", [
+        //             ["relative=parent"]
+        //         ], "");
+        //         oldFrameLevels.pop();
+        //     }
+        //     while (oldFrameLevels.length != 0 && oldFrameLevels[oldFrameLevels.length - 1] != newFrameLevels[oldFrameLevels.length - 1]) {
+        //         addCommandAuto("selectFrame", [
+        //             ["relative=parent"]
+        //         ], "");
+        //         oldFrameLevels.pop();
+        //     }
+        //     while (oldFrameLevels.length < newFrameLevels.length) {
+        //         addCommandAuto("selectFrame", [
+        //             ["index=" + newFrameLevels[oldFrameLevels.length]]
+        //         ], "");
+        //         oldFrameLevels.push(newFrameLevels[oldFrameLevels.length]);
+        //     }
+        //     this.currentRecordingFrameLocation[testCaseId] = message.frameLocation;
+        // }
+        //
+        // //Record: doubleClickAt
+        // if (message.command == "doubleClickAt") {
+        //     var command = getRecordsArray();
+        //     var select = getSelectedRecord();
+        //     var length = (select == "") ? getRecordsNum() : select.split("-")[1] - 1;
+        //     var equaln = getCommandName(command[length - 1]) == getCommandName(command[length - 2]);
+        //     var equalt = getCommandTarget(command[length - 1]) == getCommandTarget(command[length - 2]);
+        //     var equalv = getCommandValue(command[length - 1]) == getCommandValue(command[length - 2]);
+        //     if (getCommandName(command[length - 1]) == "clickAt" && equaln && equalt && equalv) {
+        //         deleteCommand(command[length - 1].id);
+        //         deleteCommand(command[length - 2].id);
+        //         if (select != "") {
+        //             var current = document.getElementById(command[length - 2].id)
+        //             current.className += ' selected';
+        //         }
+        //     }
+        // } else if(message.command.includes("Value") && typeof message.value === 'undefined') {
+        //     sideex_log.error("Error: This element does not have property 'value'. Please change to use storeText command.");
+        //     return;
+        // } else if(message.command.includes("Text") && message.value === '') {
+        //     sideex_log.error("Error: This element does not have property 'Text'. Please change to use storeValue command.");
+        //     return;
+        // } else if (message.command.includes("store")) {
+        //     // In Google Chrome, window.prompt() must be triggered in
+        //     // an actived tabs of front window, so we let panel window been focused
+        //     browser.windows.update(this.selfWindowId, {focused: true})
+        //     .then(function() {
+        //         // Even if window has been focused, window.prompt() still failed.
+        //         // Delay a little time to ensure that status has been updated
+        //         setTimeout(function() {
+        //             message.value = prompt("Enter the name of the variable");
+        //             if (message.insertBeforeLastCommand) {
+        //                 addCommandBeforeLastCommand(message.command, message.target, message.value);
+        //             } else {
+        //                 notification(message.command, message.target, message.value);
+        //                 addCommandAuto(message.command, message.target, message.value);
+        //             }
+        //         }, 100);
+        //     })
+        //     return;
+        // }
 
         //handle choose ok/cancel confirm
         if (message.insertBeforeLastCommand) {
             addCommandBeforeLastCommand(message.command, message.target, message.value);
         } else {
-            notification(message.command, message.target, message.value);
+            //notification(message.command, message.target, message.value);
             addCommandAuto(message.command, message.target, message.value);
         }
     }

@@ -1,9 +1,9 @@
 {
-    "description": "SideeX (Extended Selenium IDE) - A free and open source smart record-playback automated web application testing tool",
+    "description": "Oracle Globalization Automation Technology - Recording IDE",
     "manifest_version": 2,
-    "name": "SideeX - Smart Record-Play Browser Automation",
-    "version": "2.3.4",
-    "homepage_url": "http://sideex.org/",
+    "name": "GatIDEX",
+    "version": "1.0.0",
+    "homepage_url": "https://github.com/wangbl11/gatIDEX",
     "icons":
     {
         "48": "icons/icons-48.png",
@@ -29,7 +29,7 @@
             "js": ["content/atoms.js", "content/utils.js", "content/selenium-browserbot.js",
                    "common/escape.js", "content/selenium-api.js", "content/locatorBuilders.js",
                    "content/recorder.js", "content/recorder-handlers.js", "content/command-receiver.js",
-                   "content/targetSelecter.js", "content/sizzle.js"],
+                   "content/targetSelecter.js", "content/sizzle.js","content/gatide.js"],
             "match_about_blank": true,
             "all_frames": true
         },
@@ -44,7 +44,8 @@
 
     "background":
     {
-        "scripts": ["common/browser-polyfill.js", "background/background.js"]
+        "scripts": ["common/browser-polyfill.js", "panel/js/recorder.js","background/background.js",
+        "panel/js/background/recorder.js","deps/idb-file-storage.js","background/gatback.js"]
     },
 
     "browser_action":
