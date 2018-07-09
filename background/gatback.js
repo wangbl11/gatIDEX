@@ -14,6 +14,7 @@
  *  limitations under the License.
  *
  */
+ /*
 async function test(){
   try{
  const tmpFiles = await IDBFiles.getFileStorage({
@@ -21,26 +22,22 @@ async function test(){
   });
 const file = await tmpFiles.createMutableFile("filename.txt");
 const fh = file.open("readwrite");
-// const metadata = await fh.getMetadata();
-// console.log(metadata.size); // -> 0
 
 await fh.append("new file content");
-
-// const metadata = await fh.getMetadata();
-// console.log(metadata.size); // -> updated size
 
 await fh.close();
 
 await file.persist();
 console.log('%%%%%%%%%%%%%%%%%%%')
 const fileNames = await tmpFiles.list();
- console.log(fileNames); // -> ["path/filename.txt"]
+ console.log(fileNames);
   await tmpFiles.put('/Users/songjian/t.txt', file);
 
 }catch(err){
   console.log(err);
 }
 }
+*/
 
 var isRecording = true;
 var recordingArray=[];
@@ -63,19 +60,39 @@ function getRecordsArray() {
     return recordingArray;
 }
 
+/*Read data from storage */
+function getStorage(){
+  var gettingAllStorageItems = browser.storage.local.get();
+  gettingAllStorageItems.then((results) => {
+      gat_runner_vncport=results["gat.runner.vncport"];
+      gat_runner_url=results["gat.runner.url"];
+      gat_runner_datafile=results["gat.runner.datafile"];
+      gat_runner_sSocketid=results["gat.runner.sSocketid"];
+      console.log(results);
+  }, onError);
+};
+function setStorage(key,val){
+  if (key==1)
+    browser.storage.local.set({"steps":val});
+}
+function costume(){
+   let _cloth="";
+   return _cloth;
+}
 function addCommand(command_name, command_target_array, command_value, auto, insertCommand) {
     // create default test suite and case if necessary
     var s_suite = getSelectedSuite(),
         s_case = getSelectedCase();
 
-   console.log(command_name);
-   console.log(command_target_array);
+
    recordingArray.push({
       "command":command_name,
       "target": command_target_array,
       "value":command_value
-   })
-
+   });
+   let _json=JSON.stringify(recordingArray);
+   console.log(_json);
+   setStorage(1,_json);
 }
 
 // add command automatically (append upward)
@@ -87,11 +104,6 @@ function addCommandAuto(command_name, command_target_array, command_value) {
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 recorder=new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
-//recorder.attach();
-var myStorage = window.localStorage;
-myStorage.setItem('myCat', 'Tom');
-console.log('~~~~~~~~~~~~~~~~~~~~~~~');
-//test();
-console.log('~~~~~~~~~~~~~~~~~~~~~~~ Done'+myStorage.getItem('myCat'));
+recorder.attach();
 
 //loop all existing tab to send attachRecorder info
