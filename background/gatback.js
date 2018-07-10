@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Oracle GAT committers
  *
+ *  Author: tina.wang@oracle.com
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
@@ -14,6 +15,28 @@
  *  limitations under the License.
  *
  */
+
+ /*
+  *  Sample script
+    {
+     "id":"WrMDFKdE5mMgval_xym_ovy071qT4ls8",
+     "name":"tina_test01",
+      "productName":"ias",
+      "releaseName":"1.0",
+      "componentName":"odi",
+      "createTime":1524019749585,
+      "updateTime":1524019749585,
+      "insertedBy":"tina.wang@oracle.com",
+      "updatedBy":"tina.wang@oracle.com",
+      "shared":false,
+      "tags":[
+         "manual",
+         "home"
+      ],
+      "seleniumVersion":"2"
+    }
+  */
+
  /*
 async function test(){
   try{
@@ -41,6 +64,7 @@ const fileNames = await tmpFiles.list();
 
 var isRecording = true;
 var recordingArray=[];
+var steps=[];
 function getSelectedCase(){
   var _json={
     "id":"111",
@@ -75,29 +99,62 @@ function setStorage(key,val){
   if (key==1)
     browser.storage.local.set({"steps":val});
 }
+function beautifyLocators(locators){
+
+}
 function costume(){
    let _cloth="";
    return _cloth;
 }
-function addCommand(command_name, command_target_array, command_value, auto, insertCommand) {
+var valueCommands=["type","clickAt"];
+function addCommand(command_name, command_target_array, command_value, auto, insertCommand,frameLocation) {
     // create default test suite and case if necessary
     var s_suite = getSelectedSuite(),
         s_case = getSelectedCase();
 
+   var _frames=[];
+   if (frameLocation)
+     _frames=frameLocation.split(":");
 
    recordingArray.push({
       "command":command_name,
       "target": command_target_array,
       "value":command_value
    });
-   let _json=JSON.stringify(recordingArray);
-   console.log(_json);
-   setStorage(1,_json);
+   let _json;
+   if (command_name=='open'){
+      _json={
+        "command": command_name,
+        "url":command_value,
+        "parametrize":{
+            "urlParam":"url"
+         }
+      };
+   }else{
+       _json={
+        "command":command_name,
+        "locators": command_target_array&&command_target_array.length>0?command_target_array[0]:{},
+        "elementAttributes":command_target_array&&command_target_array.length>1?command_target_array[1]:{},
+        "coordinates":{},
+        "upperElements":[],
+        "path":_frames,
+         "value":",",
+         "optional":false
+      }
+      if (valueCommands.indexOf(command_name)>=0){
+        _json['value']=command_value;
+      }
+   }
+   steps.push(_json);
+   let _changed=JSON.stringify(steps);
+   console.log(_changed);
+   //setStorage(1,_changed);
+   setStorage(1,steps);
 }
 
 // add command automatically (append upward)
-function addCommandAuto(command_name, command_target_array, command_value) {
-    addCommand(command_name, command_target_array, command_value, 1, false);
+function addCommandAuto(command_name, command_target_array, command_value,frameLocation) {
+    addCommand(command_name, command_target_array, command_value, 1, false,frameLocation);
 }
 
 //initialize background recorder

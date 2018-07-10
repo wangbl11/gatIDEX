@@ -60,8 +60,96 @@ LocatorBuilders.prototype.build = function(e) {
         return "LOCATOR_DETECTION_FAILED";
     }
 };
-
+var elementsAttrs=["placeholder"];
+LocatorBuilders.prototype.computeElementAttrs = function(e) {
+  var _json={};
+  if (e.tagName)
+     _json['tag']=e.tagName.toLowerCase();
+  for (one in elementsAttrs){
+      if (e.hasAttribute(one)){
+         _json[one]=e.getAttribute(one);
+      }
+  }
+  return _json;
+}
 LocatorBuilders.prototype.buildAll = function(el) {
+    var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
+    var xpathLevel = 0;
+    var maxLevel = 10;
+    var locator;
+    var locators = [];
+    var _main={};
+    //this.log.debug("getLocator for element " + e);
+    var coreLocatorStrategies = this.pageBot().locationStrategies;
+    var _seq=0;
+    for (var i = 0; i < LocatorBuilders.order.length; i++) {
+        var finderName = LocatorBuilders.order[i];
+        //this.log.debug("trying " + finderName);
+        try {
+            locator = this.buildWith(finderName, e);
+            if (locator) {
+                locator = String(locator);
+                //this.log.debug("locator=" + locator);
+                // test the locator. If a is_fuzzy_match() heuristic function is
+                // defined for the location strategy, use it to determine the
+                // validity of the locator's results. Otherwise, maintain existing
+                // behavior.
+                //      try {
+                //        //alert(PageBot.prototype.locateElementByUIElement);
+                //        //Samit: The is_fuzzy_match stuff is buggy - comparing builder name with a locator name usually results in an exception :(
+                //        var is_fuzzy_match = this.pageBot().locationStrategies[finderName].is_fuzzy_match;
+                //        if (is_fuzzy_match) {
+                //          if (is_fuzzy_match(this.findElement(locator), e)) {
+                //            locators.push([ locator, finderName ]);
+                //          }
+                //        }
+                //        else {
+                //          if (e == this.findElement(locator)) {
+                //            locators.push([ locator, finderName ]);
+                //          }
+                //        }
+                //      }
+                //      catch (exception) {
+                //        if (e == this.findElement(locator)) {
+                //          locators.push([ locator, finderName ]);
+                //        }
+                //      }
+
+                //Samit: The following is a quickfix for above commented code to stop exceptions on almost every locator builder
+                //TODO: the builderName should NOT be used as a strategy name, create a feature to allow locatorBuilders to specify this kind of behaviour
+                //TODO: Useful if a builder wants to capture a different element like a parent. Use the this.elementEquals
+
+
+
+                if (finderName != 'tac') {
+                    var fe = this.findElement(locator);
+                    if ((e == fe) || (coreLocatorStrategies[finderName] && coreLocatorStrategies[finderName].is_fuzzy_match && coreLocatorStrategies[finderName].is_fuzzy_match(fe, e))) {
+                        _main[finderName]={"seq":_seq++,"val":[locator]};
+                        //locators.push([locator, finderName]);
+                    }
+                } else {
+                    //locators.splice(0, 0, [locator, finderName]);
+                    //其他的seq都要增加一个，然后把这个放到最顶部
+                    for (key in _main){
+                       let _one=_main[key];
+                       _one["seq"]=_one["seq"]+1;
+                    }
+                    _main[finderName]={"seq":0,"val":[locator]};
+                    _seq++;
+                }
+            }
+        } catch (e) {
+            // TODO ignore the buggy locator builder for now
+            //this.log.debug("locator exception: " + e);
+        }
+    }
+    let _json=this.computeElementAttrs(e);
+    locators.push(_main);
+    locators.push(_json);
+    return locators;
+};
+
+LocatorBuilders.prototype.buildAllBak = function(el) {
     var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
     var xpathLevel = 0;
     var maxLevel = 10;
@@ -154,7 +242,7 @@ LocatorBuilders._orderChanged = function() {
     var changed = this._ensureAllPresent(this.order, this._preferredOrder);
     this._sortByRefOrder(this.order, this._preferredOrder);
     if (changed) {
-        // NOTE: for some reasons we does not use this part 
+        // NOTE: for some reasons we does not use this part
         // this.notify('preferredOrderChanged', this._preferredOrder);
     }
 };

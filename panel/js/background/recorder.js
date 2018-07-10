@@ -217,6 +217,11 @@ class BackgroundRecorder {
 
         if (this.openedTabIds[testCaseId][sender.tab.id] == undefined)
             return;
+
+        // dispose path (frame information)
+
+
+
         //
         // if (message.frameLocation !== this.currentRecordingFrameLocation[testCaseId]) {
         //     let newFrameLevels = message.frameLocation.split(':');
@@ -289,7 +294,7 @@ class BackgroundRecorder {
             addCommandBeforeLastCommand(message.command, message.target, message.value);
         } else {
             //notification(message.command, message.target, message.value);
-            addCommandAuto(message.command, message.target, message.value);
+            addCommandAuto(message.command, message.target, message.value,message.frameLocation);
         }
     }
 
