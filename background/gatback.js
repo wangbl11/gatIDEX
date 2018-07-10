@@ -135,7 +135,7 @@ function addCommand(command_name, command_target_array, command_value, auto, ins
         "command":command_name,
         "locators": command_target_array&&command_target_array.length>0?command_target_array[0]:{},
         "elementAttributes":command_target_array&&command_target_array.length>1?command_target_array[1]:{},
-        "coordinates":{},
+        "coordinates":command_target_array&&command_target_array.length>2?command_target_array[2]:{},
         "upperElements":[],
         "path":_frames,
          "value":",",

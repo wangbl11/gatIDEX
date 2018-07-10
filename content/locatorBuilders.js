@@ -16,6 +16,7 @@
 
 function LocatorBuilders(window) {
     this.window = window;
+    this.doc = window.document;
     //this.log = new Log("LocatorBuilders");
 }
 
@@ -72,6 +73,44 @@ LocatorBuilders.prototype.computeElementAttrs = function(e) {
   }
   return _json;
 }
+
+LocatorBuilders.prototype.getNodeCoords=function(node, bAdjusted, bNodeContents) {
+  var coords = {};
+  try{
+  var doc = this.doc;
+  if (doc.createRange) {
+    var range = doc.createRange();
+    if (bNodeContents || node.nodeType === 3) {
+      //console.log('.......>');
+      range.selectNodeContents(node);
+    } else {
+      //console.log('<.........');
+      range.selectNode(node);
+    }
+    console.log(range);
+    var j = Math.max(doc.documentElement.scrollTop, doc.body.scrollTop);
+    var k = Math.max(doc.documentElement.scrollLeft, doc.body.scrollLeft);
+    if (range.getBoundingClientRect) {
+      var rect = range.getBoundingClientRect();
+      if (rect) {
+        if (bAdjusted) {
+          coords.x = Math.round(rect.left);
+          coords.y = Math.round(rect.top);
+          coords.x1 = Math.round(rect.right);
+          coords.y1 = Math.round(rect.bottom);
+        } else {
+          coords.x = Math.round(rect.left + k);
+          coords.y = Math.round(rect.top + j);
+          coords.x1 = Math.round(rect.right + k);
+          coords.y1 = Math.round(rect.bottom + j);
+        }
+      }
+    }
+  }}catch(e){
+
+  }
+  return coords;
+}
 LocatorBuilders.prototype.buildAll = function(el) {
     var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
     var xpathLevel = 0;
@@ -79,6 +118,7 @@ LocatorBuilders.prototype.buildAll = function(el) {
     var locator;
     var locators = [];
     var _main={};
+    var _coords=this.getNodeCoords(e);
     //this.log.debug("getLocator for element " + e);
     var coreLocatorStrategies = this.pageBot().locationStrategies;
     var _seq=0;
@@ -146,6 +186,7 @@ LocatorBuilders.prototype.buildAll = function(el) {
     let _json=this.computeElementAttrs(e);
     locators.push(_main);
     locators.push(_json);
+    locators.push(_coords);
     return locators;
 };
 
