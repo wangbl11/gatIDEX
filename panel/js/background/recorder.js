@@ -211,8 +211,8 @@ class BackgroundRecorder {
 
         if (getRecordsArray().length === 0) {
             addCommandAuto("open", [
-                [sender.tab.url]
-            ], "");
+                [{"finder":"url","values":[sender.tab.url]}]
+            ], sender.tab.url);
         }
 
         if (this.openedTabIds[testCaseId][sender.tab.id] == undefined)
