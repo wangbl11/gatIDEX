@@ -31,8 +31,10 @@ class Recorder {
     } catch (e) {
       console.log(e);
     }
-    //if (window.location.href !== 'about:blank')
+    this.getWindowIdxInScript(0);
+  }
 
+  getWindowIdxInScript(mode,json){
     var sending = browser.runtime.sendMessage({
       "command": "gatWindow",
       "type": window == window.top ? "top" : "frame",
@@ -44,25 +46,21 @@ class Recorder {
     sending.then(
       function(message) {
         that.recordingIdx = message.response;
-        //that.frameLocation = that.recordingIdx + that.frameLocation;
-        console.log('------->' + that.recordingIdx)
+        //console.log('------->' + that.recordingIdx)
+
+        if (mode==1){
+          json['windowIdx']=that.recordingIdx;
+          browser.runtime.sendMessage(json).catch(function(reason) {
+            // If receiving end does not exist, detach the recorder
+            self.detach();
+          });
+        }
       },
       function(error) {
         console.log(`Error: ${error}`);
       }
     );
-
   }
-
-  // handleResponse(message) {
-  //   this.recordingIdx = message.response;
-  //   this.frameLocation = this.recordingIdx + this.frameLocation;
-  //   console.log(`Message from the background script:  ${message.response}`);
-  // }
-  //
-  // handleError(error) {
-  //   console.log(`Error: ${error}`);
-  // }
 
   // This part of code is copyright by Software Freedom Conservancy(SFC)
   parseEventKey(eventKey) {
@@ -167,12 +165,6 @@ class Recorder {
         father["frames"] = children;
     }
 
-    // father={
-    //     "name":currentWindow.name,
-    //     "location": currentWindow.location.href,
-    //     "frames": father.name?[father]:[]
-    // };
-
     return father.name ? [father] : [];
   }
 
@@ -221,46 +213,18 @@ class Recorder {
     //console.log(this.frameLocation);
 
     //if
+    var _json={
+      command: command,
+      target: target,
+      value: value,
+      insertBeforeLastCommand: insertBeforeLastCommand,
+      frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
+      windowIdx: this.recordingIdx
+    }
     if (this.recordingIdx == -1) {
-      var sending = browser.runtime.sendMessage({
-        "command": "gatWindow",
-        "type": window == window.top ? "top" : "frame",
-        "frameLocation": this.frameLocation,
-        "locators": []
-      });
-
-      var that = this;
-      sending.then(
-        function(message) {
-          that.recordingIdx = message.response;
-          //that.frameLocation = that.recordingIdx + that.frameLocation;
-          console.log('------->' + that.recordingIdx)
-          browser.runtime.sendMessage({
-            command: command,
-            target: target,
-            value: value,
-            insertBeforeLastCommand: insertBeforeLastCommand,
-            frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : that.frameLocation,
-            windowIdx: that.recordingIdx
-          }).catch(function(reason) {
-            // If receiving end does not exist, detach the recorder
-            self.detach();
-          });
-        },
-        function(error) {
-          console.log(`Error: ${error}`);
-        }
-      );
-
+      this.getWindowIdxInScript(1,_json);
     } else {
-      browser.runtime.sendMessage({
-        command: command,
-        target: target,
-        value: value,
-        insertBeforeLastCommand: insertBeforeLastCommand,
-        frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
-        windowIdx: this.recordingIdx
-      }).catch(function(reason) {
+      browser.runtime.sendMessage(_json).catch(function(reason) {
         // If receiving end does not exist, detach the recorder
         self.detach();
       });
