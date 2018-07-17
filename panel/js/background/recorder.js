@@ -63,7 +63,7 @@ class BackgroundRecorder {
             self.currentRecordingTabId[testCaseId] = activeInfo.tabId;
             self.currentRecordingWindowId[testCaseId] = activeInfo.windowId;
             self.currentRecordingFrameLocation[testCaseId] = "root";
-            addCommandAuto("selectWindow", [[self.openedTabIds[testCaseId][activeInfo.tabId]]], "");
+            //addCommandAuto("selectWindow", [[self.openedTabIds[testCaseId][activeInfo.tabId]]], "");
         }, 150);
     }
 
@@ -73,7 +73,6 @@ class BackgroundRecorder {
             return;
         }
         let testCaseId = testCase.id;
-        console.log(this.openedTabIds);
         if (!this.openedTabIds[testCaseId]) {
             return;
         }
@@ -117,7 +116,7 @@ class BackgroundRecorder {
                 self.currentRecordingWindowId[testCaseId] = windowId;
                 self.currentRecordingTabId[testCaseId] = tabs[0].id;
                 self.currentRecordingFrameLocation[testCaseId] = "root";
-                addCommandAuto("selectWindow", [[self.openedTabIds[testCaseId][tabs[0].id]]], "");
+                //addCommandAuto("selectWindow", [[self.openedTabIds[testCaseId][tabs[0].id]]], "");
             }
         });
     }
@@ -134,15 +133,15 @@ class BackgroundRecorder {
 
         if (this.openedTabIds[testCaseId][tabId] != undefined) {
             if (this.currentRecordingTabId[testCaseId] !== tabId) {
-                addCommandAuto("selectWindow", [
-                    [this.openedTabIds[testCaseId][tabId]]
-                ], "");
-                addCommandAuto("close", [
-                    [this.openedTabIds[testCaseId][tabId]]
-                ], "");
-                addCommandAuto("selectWindow", [
-                    [this.openedTabIds[testCaseId][this.currentRecordingTabId[testCaseId]]]
-                ], "");
+                // addCommandAuto("selectWindow", [
+                //     [this.openedTabIds[testCaseId][tabId]]
+                // ], "");
+                // addCommandAuto("close", [
+                //     [this.openedTabIds[testCaseId][tabId]]
+                // ], "");
+                // addCommandAuto("selectWindow", [
+                //     [this.openedTabIds[testCaseId][this.currentRecordingTabId[testCaseId]]]
+                // ], "");
             } else {
                 addCommandAuto("close", [
                     [this.openedTabIds[testCaseId][tabId]]
@@ -156,6 +155,7 @@ class BackgroundRecorder {
 
     webNavigationOnCreatedNavigationTargetHandler(details) {
         console.log('in webNavigationOnCreatedNavigationTargetHandler');
+        console.log(details);
         let testCase = getSelectedCase();
         if (!testCase)
             return;
@@ -179,7 +179,7 @@ class BackgroundRecorder {
         }
     };
 
-    addCommandMessageHandler(message, sender, sendRequest) {
+    addCommandMessageHandler(message, sender, sendResponse) {
         console.log(message);
         //|| this.openedWindowIds[sender.tab.windowId] == undefined
         if (!message.command)
@@ -207,6 +207,27 @@ class BackgroundRecorder {
             this.currentRecordingWindowId[testCaseId] = sender.tab.windowId;
             this.openedTabNames[testCaseId]["win_ser_local"] = sender.tab.id;
             this.openedTabIds[testCaseId][sender.tab.id] = "win_ser_local";
+        }
+
+        //
+        if (message.command=='gatWindow'){
+               // a new window including top or frame
+               var _one={
+                  "tabId":sender.tab.id,
+                  "windowId":sender.tab.windowId,
+                  "url":sender.url,
+                  "type":message.type,
+                  "topWindowIdx":-1,
+                  "frameLocation":message.frameLocation
+               }
+               let _ret=addWindow(_one);
+               //if (_ret&&_ret[0]!=-1) _one.frameLocation=_ret[0]+_one.frameLocation;
+
+
+               //new logic to get index
+               console.log(_ret);
+               sendResponse({response:  _ret});
+               return;
         }
 
         if (getRecordsArray().length === 0) {
@@ -294,7 +315,7 @@ class BackgroundRecorder {
             addCommandBeforeLastCommand(message.command, message.target, message.value);
         } else {
             //notification(message.command, message.target, message.value);
-            addCommandAuto(message.command, message.target, message.value,message.frameLocation);
+            addCommandAuto(message.command, message.target, message.value,message.windowIdx);
         }
     }
 

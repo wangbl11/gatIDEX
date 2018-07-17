@@ -87,7 +87,7 @@ LocatorBuilders.prototype.getNodeCoords = function(node, bAdjusted, bNodeContent
         //console.log('<.........');
         range.selectNode(node);
       }
-      console.log(range);
+      //console.log(range);
       var j = Math.max(doc.documentElement.scrollTop, doc.body.scrollTop);
       var k = Math.max(doc.documentElement.scrollLeft, doc.body.scrollLeft);
       if (range.getBoundingClientRect) {

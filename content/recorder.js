@@ -17,119 +17,278 @@
 
 class Recorder {
 
-    constructor(window) {
-        this.window = window;
-        this.attached = false;
-        this.locatorBuilders = new LocatorBuilders(window);
-        this.frameLocation = this.getFrameLocation();
-        browser.runtime.sendMessage({
-            frameLocation: this.frameLocation
-        }).catch(function(reason) {
-            // Failed silently if receiving end does not exist
-        });
+  constructor(window) {
+    this.window = window;
+    this.recordingIdx = -1;
+    this.attached = false;
+    this.locatorBuilders = new LocatorBuilders(window);
+    this.frameLocation = this.getFrameLocation();
+    try {
+      if (window != window.top && window.frameElement) {
+        let locs = this.locatorBuilders.buildAll(window.frameElement);
+        console.log(locs);
+      }
+    } catch (e) {
+      console.log(e);
     }
+    //if (window.location.href !== 'about:blank')
 
-    // This part of code is copyright by Software Freedom Conservancy(SFC)
-    parseEventKey(eventKey) {
-        if (eventKey.match(/^C_/)) {
-            return { eventName: eventKey.substring(2), capture: true };
+    var sending = browser.runtime.sendMessage({
+      "command": "gatWindow",
+      "type": window == window.top ? "top" : "frame",
+      "frameLocation": this.frameLocation,
+      "locators": []
+    });
+
+    var that = this;
+    sending.then(
+      function(message) {
+        that.recordingIdx = message.response;
+        //that.frameLocation = that.recordingIdx + that.frameLocation;
+        console.log('------->' + that.recordingIdx)
+      },
+      function(error) {
+        console.log(`Error: ${error}`);
+      }
+    );
+
+  }
+
+  // handleResponse(message) {
+  //   this.recordingIdx = message.response;
+  //   this.frameLocation = this.recordingIdx + this.frameLocation;
+  //   console.log(`Message from the background script:  ${message.response}`);
+  // }
+  //
+  // handleError(error) {
+  //   console.log(`Error: ${error}`);
+  // }
+
+  // This part of code is copyright by Software Freedom Conservancy(SFC)
+  parseEventKey(eventKey) {
+    if (eventKey.match(/^C_/)) {
+      return {
+        eventName: eventKey.substring(2),
+        capture: true
+      };
+    } else {
+      return {
+        eventName: eventKey,
+        capture: false
+      };
+    }
+  }
+
+  // This part of code is copyright by Software Freedom Conservancy(SFC)
+  attach() {
+    if (this.attached) {
+      return;
+    }
+    this.attached = true;
+    this.eventListeners = {};
+    var self = this;
+    for (let eventKey in Recorder.eventHandlers) {
+      var eventInfo = this.parseEventKey(eventKey);
+      var eventName = eventInfo.eventName;
+      var capture = eventInfo.capture;
+      // create new function so that the variables have new scope.
+      function register() {
+        var handlers = Recorder.eventHandlers[eventKey];
+        var listener = function(event) {
+          for (var i = 0; i < handlers.length; i++) {
+            handlers[i].call(self, event);
+          }
+        }
+        this.window.document.addEventListener(eventName, listener, capture);
+        this.eventListeners[eventKey] = listener;
+      }
+      register.call(this);
+    }
+  }
+
+  // This part of code is copyright by Software Freedom Conservancy(SFC)
+  detach() {
+    if (!this.attached) {
+      return;
+    }
+    this.attached = false;
+    for (let eventKey in this.eventListeners) {
+      var eventInfo = this.parseEventKey(eventKey);
+      var eventName = eventInfo.eventName;
+      var capture = eventInfo.capture;
+      this.window.document.removeEventListener(eventName, this.eventListeners[eventKey], capture);
+    }
+    delete this.eventListeners;
+  }
+
+  getFrameLocation() {
+    let currentWindow = window;
+    let currentParentWindow;
+    let frameLocation = ""
+    while (currentWindow !== window.top) {
+      currentParentWindow = currentWindow.parent;
+      for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
+        if (currentParentWindow.frames[idx] === currentWindow) {
+          frameLocation = ":" + idx + frameLocation;
+          currentWindow = currentParentWindow;
+          break;
+        }
+    }
+    //return frameLocation = "0" + frameLocation;
+    return frameLocation.length == 0 ? frameLocation : frameLocation.substring(1);
+  }
+
+  getFrameLocations() {
+    let currentWindow = window;
+    let currentParentWindow;
+    let frameLocation = "";
+    let father = {};
+    let _lastone;
+    while (currentWindow !== window.top) {
+      let children = [];
+      if (father.name) {
+        _lastone = father;
+        father = {};
+      }
+      currentParentWindow = currentWindow.parent;
+      for (let idx = 0; idx < currentParentWindow.frames.length; idx++) {
+        let _frame = currentParentWindow.frames[idx];
+
+        if (_lastone && _frame === currentWindow) {
+          children.push(_lastone)
         } else {
-            return { eventName: eventKey, capture: false };
+          children.push({
+            "name": _frame.name,
+            "locators": []
+          });
         }
+      }
+      father["name"] = currentParentWindow.name,
+        father["frames"] = children;
     }
 
-    // This part of code is copyright by Software Freedom Conservancy(SFC)
-    attach() {
-        if (this.attached) {
-            return;
+    // father={
+    //     "name":currentWindow.name,
+    //     "location": currentWindow.location.href,
+    //     "frames": father.name?[father]:[]
+    // };
+
+    return father.name ? [father] : [];
+  }
+
+  getFrameLocationsBak() {
+    let currentWindow = window;
+    let currentParentWindow;
+    let frameLocation = "";
+    let father = {};
+    let _lastone;
+    while (currentWindow !== window.top) {
+      let children = [];
+      if (father.name) {
+        _lastone = father;
+        father = {};
+      }
+      currentParentWindow = currentWindow.parent;
+      for (let idx = 0; idx < currentParentWindow.frames.length; idx++) {
+        let _frame = currentParentWindow.frames[idx];
+
+        if (_lastone && _frame === currentWindow) {
+          children.push(_lastone)
+        } else {
+          children.push({
+            "name": _frame.name,
+            "locators": []
+          });
         }
-        this.attached = true;
-        this.eventListeners = {};
-        var self = this;
-        for (let eventKey in Recorder.eventHandlers) {
-            var eventInfo = this.parseEventKey(eventKey);
-            var eventName = eventInfo.eventName;
-            var capture = eventInfo.capture;
-            // create new function so that the variables have new scope.
-            function register() {
-                var handlers = Recorder.eventHandlers[eventKey];
-                var listener = function(event) {
-                    for (var i = 0; i < handlers.length; i++) {
-                        handlers[i].call(self, event);
-                    }
-                }
-                this.window.document.addEventListener(eventName, listener, capture);
-                this.eventListeners[eventKey] = listener;
-            }
-            register.call(this);
-        }
+      }
+      father["name"] = currentParentWindow.name,
+        father["frames"] = children;
     }
 
-    // This part of code is copyright by Software Freedom Conservancy(SFC)
-    detach() {
-        if (!this.attached) {
-            return;
-        }
-        this.attached = false;
-        for (let eventKey in this.eventListeners) {
-            var eventInfo = this.parseEventKey(eventKey);
-            var eventName = eventInfo.eventName;
-            var capture = eventInfo.capture;
-            this.window.document.removeEventListener(eventName, this.eventListeners[eventKey], capture);
-        }
-        delete this.eventListeners;
-    }
+    father = {
+      "name": currentWindow.name,
+      "location": currentWindow.location.href,
+      "windowId": "",
+      "tabId": "",
+      "frames": father.name ? [father] : []
+    };
 
-    getFrameLocation() {
-        let currentWindow = window;
-        let currentParentWindow;
-        let frameLocation = ""
-        while (currentWindow !== window.top) {
-            currentParentWindow = currentWindow.parent;
-            for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
-                if (currentParentWindow.frames[idx] === currentWindow) {
-                    frameLocation = ":" + idx + frameLocation;
-                    currentWindow = currentParentWindow;
-                    break;
-                }
-        }
-        return frameLocation = "root" + frameLocation;
-    }
+    return father;
+  }
 
-    record(command, target, value, insertBeforeLastCommand, actualFrameLocation) {
-        let self = this;
-        browser.runtime.sendMessage({
+  record(command, target, value, insertBeforeLastCommand, actualFrameLocation) {
+    let self = this;
+    //console.log(this.frameLocation);
+
+    //if
+    if (this.recordingIdx == -1) {
+      var sending = browser.runtime.sendMessage({
+        "command": "gatWindow",
+        "type": window == window.top ? "top" : "frame",
+        "frameLocation": this.frameLocation,
+        "locators": []
+      });
+
+      var that = this;
+      sending.then(
+        function(message) {
+          that.recordingIdx = message.response;
+          //that.frameLocation = that.recordingIdx + that.frameLocation;
+          console.log('------->' + that.recordingIdx)
+          browser.runtime.sendMessage({
             command: command,
             target: target,
             value: value,
             insertBeforeLastCommand: insertBeforeLastCommand,
-            frameLocation: (actualFrameLocation != undefined ) ? actualFrameLocation : this.frameLocation,
-        }).catch (function(reason) {
+            frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : that.frameLocation,
+            windowIdx: that.recordingIdx
+          }).catch(function(reason) {
             // If receiving end does not exist, detach the recorder
             self.detach();
-        });
+          });
+        },
+        function(error) {
+          console.log(`Error: ${error}`);
+        }
+      );
+
+    } else {
+      browser.runtime.sendMessage({
+        command: command,
+        target: target,
+        value: value,
+        insertBeforeLastCommand: insertBeforeLastCommand,
+        frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
+        windowIdx: this.recordingIdx
+      }).catch(function(reason) {
+        // If receiving end does not exist, detach the recorder
+        self.detach();
+      });
     }
+  }
 }
 
 Recorder.eventHandlers = {};
 Recorder.addEventHandler = function(handlerName, eventName, handler, options) {
-    handler.handlerName = handlerName;
-    if (!options) options = false;
-    let key = options ? ('C_' + eventName) : eventName;
-    if (!this.eventHandlers[key]) {
-        this.eventHandlers[key] = [];
-    }
-    this.eventHandlers[key].push(handler);
+  handler.handlerName = handlerName;
+  if (!options) options = false;
+  let key = options ? ('C_' + eventName) : eventName;
+  if (!this.eventHandlers[key]) {
+    this.eventHandlers[key] = [];
+  }
+  this.eventHandlers[key].push(handler);
 }
 
 
 
 // TODO: move to appropriate file
 // show element
-function startShowElement(message, sender, sendResponse){
-    if (message.showElement) {
-        result = selenium["doShowElement"](message.targetValue);
-        return Promise.resolve({result: result});
-    }
+function startShowElement(message, sender, sendResponse) {
+  if (message.showElement) {
+    result = selenium["doShowElement"](message.targetValue);
+    return Promise.resolve({
+      result: result
+    });
+  }
 }
 //browser.runtime.onMessage.addListener(startShowElement);

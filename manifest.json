@@ -30,7 +30,7 @@
                    "common/escape.js", "content/selenium-api.js", "content/locatorBuilders.js",
                    "content/recorder.js", "content/recorder-handlers.js", "content/command-receiver.js",
                    "content/targetSelecter.js", "content/sizzle.js","content/gatide.js"],
-            "match_about_blank": true,
+            "match_about_blank": false,
             "all_frames": true
         },
         {
