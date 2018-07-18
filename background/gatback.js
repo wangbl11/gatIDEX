@@ -17,27 +17,6 @@
  */
 
 /*
- *  Sample script
-   {
-    "id":"WrMDFKdE5mMgval_xym_ovy071qT4ls8",
-    "name":"tina_test01",
-     "productName":"ias",
-     "releaseName":"1.0",
-     "componentName":"odi",
-     "createTime":1524019749585,
-     "updateTime":1524019749585,
-     "insertedBy":"tina.wang@oracle.com",
-     "updatedBy":"tina.wang@oracle.com",
-     "shared":false,
-     "tags":[
-        "manual",
-        "home"
-     ],
-     "seleniumVersion":"2"
-   }
- */
-
-/*
 async function test(){
   try{
  const tmpFiles = await IDBFiles.getFileStorage({
@@ -61,6 +40,9 @@ const fileNames = await tmpFiles.list();
 }
 }
 */
+var elementAttributesTemplate={
+
+};
 var recordingWindows = [];
 var isRecording = true;
 var recordingArray = [];
@@ -109,14 +91,6 @@ function setStorage(key, val) {
   }
 }
 
-function beautifyLocators(locators) {
-
-}
-
-function costume() {
-  let _cloth = "";
-  return _cloth;
-}
 var valueCommands = ["type", "clickAt"];
 
 function addWindow(winInfo) {
@@ -135,30 +109,40 @@ function addWindow(winInfo) {
       }
       if (father) {
         winInfo.topWindowIdx = father;
-        //winInfo.frameLocation = father + winInfo.frameLocation;
+      }
+      else{//if no top winodow is found, create one, then adjust topWindowIdx of its descendants
+         recordingWindows.push({
+           "tabId":winInfo.tabId,
+           "windowId":winInfo.windowId,
+           "url":winInfo.topWindowUrl,
+           "type":"top",
+           "topWindowIdx":-1,
+           "frameLocation":"",
+           "locators":[]
+         });
+         winInfo.topWindowIdx =recordingWindows.length-1;
       }
     }
 
     for (var i = 0; i < recordingWindows.length; i++) {
       let _one = recordingWindows[i];
       if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-        console.log('^^^^^^^^')
+        //console.log('^^^^^^^^')
         if (winInfo.type == 'top' || (winInfo.type == 'frame' && _one.frameLocation == winInfo.frameLocation)) {
           oneself = i;
-          console.log('%%%%%%%%%%%%%%%%%-'+i);
           break;
         }
       } else {
-        console.log('@@@@@@@@')
+        ;
       }
     }
-    console.log(oneself)
+
     if (oneself > -1) return oneself;
 
     console.log(winInfo);
+    delete winInfo['topWindowUrl'];
     recordingWindows.push(winInfo);
     oneself = recordingWindows.length - 1;
-    console.log(oneself);
     setStorage(2, recordingWindows);
 
     return oneself;
@@ -220,7 +204,7 @@ function addCommandAuto(command_name, command_target_array, command_value, frame
 
 //initialize background recorder
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
-recorder = new BackgroundRecorder();
+var recorder = new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 recorder.attach();
 

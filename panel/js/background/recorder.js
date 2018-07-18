@@ -218,7 +218,9 @@ class BackgroundRecorder {
                   "url":sender.url,
                   "type":message.type,
                   "topWindowIdx":-1,
-                  "frameLocation":message.frameLocation
+                  "topWindowUrl":message.topUrl,
+                  "frameLocation":message.frameLocation,
+                  "locators":message.locators
                }
                let _ret=addWindow(_one);
                //if (_ret&&_ret[0]!=-1) _one.frameLocation=_ret[0]+_one.frameLocation;

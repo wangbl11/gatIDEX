@@ -23,23 +23,35 @@ class Recorder {
     this.attached = false;
     this.locatorBuilders = new LocatorBuilders(window);
     this.frameLocation = this.getFrameLocation();
+
     try {
       if (window != window.top && window.frameElement) {
-        let locs = this.locatorBuilders.buildAll(window.frameElement);
-        console.log(locs);
+        this.locators = [{"finder":"xpath","values":this.buildFrameLocators(window.frameElement)}];
       }
     } catch (e) {
       console.log(e);
     }
-    this.getWindowIdxInScript(0);
+    //write window[frame] info when record the first step on it.
+    //if (window == window.top)
+    //  this.getWindowIdxInScript(0);
   }
 
+  buildFrameLocators(myframe){
+    var locators=[];
+    if (myframe.hasAttribute('id'))
+       locators.push('//iframe[@id="'+myframe.getAttribute('id')+'"]')
+
+       locators.push(this.getFrameLocation1());
+
+    return locators;
+  }
   getWindowIdxInScript(mode,json){
     var sending = browser.runtime.sendMessage({
       "command": "gatWindow",
+      "topUrl":window.top.location.href,
       "type": window == window.top ? "top" : "frame",
       "frameLocation": this.frameLocation,
-      "locators": []
+      "locators": this.locators?this.locators:[]
     });
 
     var that = this;
@@ -136,6 +148,25 @@ class Recorder {
     return frameLocation.length == 0 ? frameLocation : frameLocation.substring(1);
   }
 
+  getFrameLocation1() {
+    let currentWindow = window;
+    let currentParentWindow;
+    let frameLocation = ""
+    while (currentWindow !== window.top) {
+      let currentNode=currentWindow.frameElement;
+      let currentNodeName=currentNode.nodeName?currentNode.nodeName.toLowerCase():"*";
+      currentParentWindow = currentWindow.parent;
+      for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
+        if (currentParentWindow.frames[idx] === currentWindow) {
+          frameLocation = "/"+currentNodeName+"[" + (idx+1) +"]"+ frameLocation;
+          currentWindow = currentParentWindow;
+          break;
+        }
+    }
+    //return frameLocation = "0" + frameLocation;
+    return frameLocation.length == 0 ? frameLocation : "/"+frameLocation;
+  }
+
   getFrameLocations() {
     let currentWindow = window;
     let currentParentWindow;
@@ -166,46 +197,6 @@ class Recorder {
     }
 
     return father.name ? [father] : [];
-  }
-
-  getFrameLocationsBak() {
-    let currentWindow = window;
-    let currentParentWindow;
-    let frameLocation = "";
-    let father = {};
-    let _lastone;
-    while (currentWindow !== window.top) {
-      let children = [];
-      if (father.name) {
-        _lastone = father;
-        father = {};
-      }
-      currentParentWindow = currentWindow.parent;
-      for (let idx = 0; idx < currentParentWindow.frames.length; idx++) {
-        let _frame = currentParentWindow.frames[idx];
-
-        if (_lastone && _frame === currentWindow) {
-          children.push(_lastone)
-        } else {
-          children.push({
-            "name": _frame.name,
-            "locators": []
-          });
-        }
-      }
-      father["name"] = currentParentWindow.name,
-        father["frames"] = children;
-    }
-
-    father = {
-      "name": currentWindow.name,
-      "location": currentWindow.location.href,
-      "windowId": "",
-      "tabId": "",
-      "frames": father.name ? [father] : []
-    };
-
-    return father;
   }
 
   record(command, target, value, insertBeforeLastCommand, actualFrameLocation) {

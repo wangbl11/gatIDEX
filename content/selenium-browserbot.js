@@ -190,7 +190,7 @@ BrowserBot.prototype.hasAlerts = function() {
 
 BrowserBot.prototype.relayBotToRC = function(s) {
     // DGF need to do this funny trick to see if we're in PI mode, because
-    // "this" might be the window, rather than the browserbot (e.g. during window.alert) 
+    // "this" might be the window, rather than the browserbot (e.g. during window.alert)
     var piMode = this.proxyInjectionMode;
     if (!piMode) {
         if (typeof(selenium) != "undefined") {
@@ -981,7 +981,7 @@ BrowserBot.prototype._getFrameElement = function(win) {
             return result;
         }
     }
-    //LOG.debug("_getFrameElement: frameElement="+frameElement); 
+    //LOG.debug("_getFrameElement: frameElement="+frameElement);
     if (frameElement) {
         //LOG.debug("frameElement.name="+frameElement.name);
     }

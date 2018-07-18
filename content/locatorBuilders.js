@@ -66,7 +66,7 @@ LocatorBuilders.prototype.computeElementAttrs = function(e) {
   var _json = {};
   if (e.tagName)
     _json['tag'] = e.tagName.toLowerCase();
-  for (one in elementsAttrs) {
+  for (var one in elementsAttrs) {
     if (e.hasAttribute(one)) {
       _json[one] = e.getAttribute(one);
     }
@@ -112,6 +112,42 @@ LocatorBuilders.prototype.getNodeCoords = function(node, bAdjusted, bNodeContent
   }
   return coords;
 }
+
+LocatorBuilders.prototype.buildForFrame = function(el) {
+  var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
+  var xpathLevel = 0;
+  var maxLevel = 10;
+  var locator;
+  var locators = [];
+  var _main = [];
+  var _coords = this.getNodeCoords(e);
+
+  var _seq = 0;
+  for (var i = 0; i < LocatorBuilders.order1.length; i++) {
+    var finderName = LocatorBuilders.order1[i];
+    console.log(finderName);
+    try {
+      locator = this.buildForWhat(1,finderName, e);
+      if (locator) {
+        locator = String(locator);
+
+        //locators.splice(0, 0, [locator, finderName]);
+        _main.splice(0, 0, {
+          "finder": finderName,
+          "values": [locator]
+        });
+      }
+    } catch (e) {
+      // TODO ignore the buggy locator builder for now
+      //this.log.debug("locator exception: " + e);
+    }
+  }
+  let _json = this.computeElementAttrs(e);
+  locators.push(_main);
+  locators.push(_json);
+  locators.push(_coords);
+  return locators;
+};
 
 LocatorBuilders.prototype.buildAll = function(el) {
   var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
@@ -168,8 +204,8 @@ LocatorBuilders.prototype.buildAll = function(el) {
           if ((e == fe) || (coreLocatorStrategies[finderName] && coreLocatorStrategies[finderName].is_fuzzy_match && coreLocatorStrategies[finderName].is_fuzzy_match(fe, e))) {
 
             let _found = false;
-            for (var q=0;q<_main.length;q++) {
-              let one=_main[q];
+            for (var q = 0; q < _main.length; q++) {
+              let one = _main[q];
               if (finderName.startsWith(one.finder)) {
                 one.values.push(locator);
                 _found = true;
@@ -177,8 +213,8 @@ LocatorBuilders.prototype.buildAll = function(el) {
               }
             }
             if (!_found) {
-              let _idx=finderName.indexOf(":");
-              if (_idx<=0) _idx=finderName.length;
+              let _idx = finderName.indexOf(":");
+              if (_idx <= 0) _idx = finderName.length;
               _main.push({
                 "finder": finderName.substring(0, _idx),
                 "values": [locator]
@@ -269,11 +305,19 @@ LocatorBuilders.prototype.buildAllBak = function(el) {
 
 LocatorBuilders.prototype.findElement = function(locator) {
   try {
-    return this.pageBot().findElement(locator);
+    var _one = this.pageBot().findElement(locator);
+    return _one;
   } catch (error) {
     //this.log.debug("findElement failed: " + error + ", locator=" + locator);
     return null;
   }
+};
+
+LocatorBuilders.order1 = [];
+LocatorBuilders.builderMap1 = {};
+LocatorBuilders.add1 = function(name, finder) {
+  this.order1.push(name);
+  this.builderMap1[name] = finder;
 };
 
 /*
@@ -406,6 +450,7 @@ LocatorBuilders.prototype.relativeXPathFromParent = function(current) {
   if (index > 0) {
     currentPath += '[' + (index + 1) + ']';
   }
+  //console.log(currentPath);
   return currentPath;
 };
 
@@ -639,7 +684,7 @@ LocatorBuilders.add('xpath:idRelative', function(e) {
 
 LocatorBuilders.add('xpath:href', function(e) {
   if (e.attributes && e.hasAttribute("href")) {
-    href = e.getAttribute("href");
+    var href = e.getAttribute("href");
     if (href.search(/^http?:\/\//) >= 0) {
       return this.preciseXPath("//" + this.xpathHtmlElement("a") + "[@href=" + this.attributeValue(href) + "]", e);
     } else {
@@ -679,6 +724,34 @@ LocatorBuilders.add('xpath:position', function(e, opt_contextNode) {
     path = currentPath + path;
     var locator = '/' + path;
     if (e == this.findElement(locator)) {
+      return locator;
+    }
+    current = current.parentNode;
+    //this.log.debug("positionXPath: current=" + current);
+  }
+  return null;
+});
+
+LocatorBuilders.prototype.buildForWhat = function(type,name, e, opt_contextNode) {
+  if (type==1)
+    return LocatorBuilders.builderMap1[name].call(this, e, opt_contextNode);
+};
+LocatorBuilders.add1('xpath:position', function(e, opt_contextNode) {
+  //this.log.debug("positionXPath: e=" + e);
+  var path = '';
+  var current = e;
+  while (current != null && current != opt_contextNode) {
+    var currentPath;
+    if (current.parentNode != null) {
+      currentPath = this.relativeXPathFromParent(current);
+    } else {
+      currentPath = '/' + this.xpathHtmlElement(current.nodeName.toLowerCase());
+    }
+    path = currentPath + path;
+    var locator = '/' + path;
+    console.log(locator);
+    if (e == this.findElement(locator)) {
+      console.log('~~~~~equal~~~~~')
       return locator;
     }
     current = current.parentNode;
