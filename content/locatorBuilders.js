@@ -125,7 +125,7 @@ LocatorBuilders.prototype.buildForFrame = function(el) {
   var _seq = 0;
   for (var i = 0; i < LocatorBuilders.order1.length; i++) {
     var finderName = LocatorBuilders.order1[i];
-    console.log(finderName);
+    //console.log(finderName);
     try {
       locator = this.buildForWhat(1,finderName, e);
       if (locator) {
@@ -231,8 +231,7 @@ LocatorBuilders.prototype.buildAll = function(el) {
         }
       }
     } catch (e) {
-      // TODO ignore the buggy locator builder for now
-      //this.log.debug("locator exception: " + e);
+    console.log(e);
     }
   }
   let _json = this.computeElementAttrs(e);
@@ -755,7 +754,7 @@ LocatorBuilders.add1('xpath:position', function(e, opt_contextNode) {
       return locator;
     }
     current = current.parentNode;
-    //this.log.debug("positionXPath: current=" + current);
+    //this.log.debug("positionXPath: current=" + current);g
   }
   return null;
 });

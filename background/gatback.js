@@ -48,6 +48,7 @@ var isRecording = true;
 var recordingArray = [];
 var steps = [];
 
+//dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
   var _json = {
     "id": "111",
@@ -66,6 +67,7 @@ function getSelectedSuite() {
 function getRecordsArray() {
   return recordingArray;
 }
+///////////////////////////////////////////////////////////////////////////////////
 
 /*Read data from storage */
 function getStorage() {
@@ -76,15 +78,19 @@ function getStorage() {
     gat_runner_datafile = results["gat.runner.datafile"];
     gat_runner_sSocketid = results["gat.runner.sSocketid"];
     console.log(results);
-  }, onError);
+  }, function (message){
+    console.log('get wrong with local');
+    //default value or default dispose
+    gat_runner_datafile='test_temporary';
+  });
 };
 
 function setStorage(key, val) {
-  if (key == 1)
+  if (key == 1) //save steps
     browser.storage.local.set({
       "steps": val
     });
-  else if (key == 2) {
+  else if (key == 2) { //save windows
     browser.storage.local.set({
       "windows": val
     });
@@ -195,6 +201,11 @@ function addCommand(command_name, command_target_array, command_value, auto, ins
   //let _changed=JSON.stringify(steps);
   //console.log(_changed);
   setStorage(1, steps);
+}
+
+// add command automatically (before last command upward)
+function addCommandBeforeLastCommand(command_name, command_target_array, command_value, frameLocation) {
+    addCommand(command_name, command_target_array, command_value, 1, true, frameLocation);
 }
 
 // add command automatically (append upward)

@@ -17,7 +17,9 @@
 
 var master = {};
 var clickEnabled = true;
-
+function openOptionPage(){
+   browser.runtime.openOptionsPage();
+}
 function openPanel(tab) {
 
     let contentWindowId = tab.windowId;
@@ -82,7 +84,8 @@ function openPanel(tab) {
 
 }
 
-browser.browserAction.onClicked.addListener(openPanel);
+//browser.browserAction.onClicked.addListener(openPanel);
+browser.browserAction.onClicked.addListener(openOptionPage);
 
 browser.windows.onRemoved.addListener(function(windowId) {
     let keys = Object.keys(master);

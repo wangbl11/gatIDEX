@@ -345,7 +345,9 @@ class BackgroundRecorder {
         browser.tabs.onActivated.addListener(this.tabsOnActivatedHandler);
         browser.windows.onFocusChanged.addListener(this.windowsOnFocusChangedHandler);
         browser.tabs.onRemoved.addListener(this.tabsOnRemovedHandler);
-        browser.webNavigation.onCreatedNavigationTarget.addListener(this.webNavigationOnCreatedNavigationTargetHandler);
+        //onCreatedNavigationTarget need FF 54+, so we need dispose it
+        if (browser.webNavigation.onCreatedNavigationTarget)
+          browser.webNavigation.onCreatedNavigationTarget.addListener(this.webNavigationOnCreatedNavigationTargetHandler);
         browser.runtime.onMessage.addListener(this.addCommandMessageHandler);
     }
 

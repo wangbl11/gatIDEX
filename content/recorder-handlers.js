@@ -35,15 +35,18 @@ Recorder.addEventHandler('type', 'change', function(event) {
                             tempTarget = tempTarget.parentElement;
                             formChk = tempTarget.tagName.toLowerCase();
                         }
-                        if (formChk == 'form' && (tempTarget.hasAttribute("id") || tempTarget.hasAttribute("name")) && (!tempTarget.hasAttribute("onsubmit"))) {
-                            if (tempTarget.hasAttribute("id"))
-                                this.record("submit", [
-                                    ["id=" + tempTarget.id, "id"]
-                                ], "");
-                            else if (tempTarget.hasAttribute("name"))
-                                this.record("submit", [
-                                    ["name=" + tempTarget.name, "name"]
-                                ], "");
+                        //if (formChk == 'form' && (tempTarget.hasAttribute("id") || tempTarget.hasAttribute("name")) && (!tempTarget.hasAttribute("onsubmit"))) {
+                        //GAT-5264
+                        if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                            // if (tempTarget.hasAttribute("id"))
+                            //     this.record("submit", [
+                            //         ["id=" + tempTarget.id, "id"]
+                            //     ], "");
+                            // else if (tempTarget.hasAttribute("name"))
+                            //     this.record("submit", [
+                            //         ["name=" + tempTarget.name, "name"]
+                            //     ], "");
+                            this.record("submit", this.locatorBuilders.buildAll(tempTarget), "");
                         } else
                             this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}");
                         enterTarget = null;
@@ -80,6 +83,7 @@ Recorder.addEventHandler('type1', 'input', function(event) {
 var preventClickTwice = false;
 Recorder.addEventHandler('clickAt', 'click', function(event) {
     if (event.button == 0 && !preventClick && event.isTrusted) {
+      alert('click');
         if (!preventClickTwice) {
             var top = event.pageY,
                 left = event.pageX;
@@ -164,11 +168,14 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
                         tempTarget = tempTarget.parentElement;
                         formChk = tempTarget.tagName.toLowerCase();
                     }
-                    if (formChk == 'form' && (tempTarget.hasAttribute("id") || tempTarget.hasAttribute("name")) && (!tempTarget.hasAttribute("onsubmit"))) {
-                        if (tempTarget.hasAttribute("id"))
-                            this.record("submit", [["id=" + tempTarget.id]], "");
-                        else if (tempTarget.hasAttribute("name"))
-                            this.record("submit", [["name=" + tempTarget.name]], "");
+                    //if (formChk == 'form' && (tempTarget.hasAttribute("id") || tempTarget.hasAttribute("name")) && (!tempTarget.hasAttribute("onsubmit"))) {
+                    //GAT-5264
+                    if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                        // if (tempTarget.hasAttribute("id"))
+                        //     this.record("submit", [["id=" + tempTarget.id]], "");
+                        // else if (tempTarget.hasAttribute("name"))
+                        //     this.record("submit", [["name=" + tempTarget.name]], "");
+                        this.record("submit", this.locatorBuilders.buildAll(tempTarget), "");
                     } else
                         this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}");
                     enterTarget = null;
@@ -189,15 +196,17 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
                                         tempTarget = tempTarget.parentElement;
                                         formChk = tempTarget.tagName.toLowerCase();
                                     }
-                                    if (formChk == 'form' && (tempTarget.hasAttribute("id") || tempTarget.hasAttribute("name")) && (!tempTarget.hasAttribute("onsubmit"))) {
-                                        if (tempTarget.hasAttribute("id"))
-                                            this.record("submit", [
-                                                ["id=" + tempTarget.id, "id"]
-                                            ], "");
-                                        else if (tempTarget.hasAttribute("name"))
-                                            this.record("submit", [
-                                                ["name=" + tempTarget.name, "name"]
-                                            ], "");
+                                    //GAT-5264
+                                    if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                                        // if (tempTarget.hasAttribute("id"))
+                                        //     this.record("submit", [
+                                        //         ["id=" + tempTarget.id, "id"]
+                                        //     ], "");
+                                        // else if (tempTarget.hasAttribute("name"))
+                                        //     this.record("submit", [
+                                        //         ["name=" + tempTarget.name, "name"]
+                                        //     ], "");
+                                        this.record("submit", this.locatorBuilders.buildAll(tempTarget), "");
                                     } else
                                         this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}");
                                     enterTarget = null;

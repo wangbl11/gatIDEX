@@ -12,12 +12,43 @@ function getSourceId(){
 
 }
 
-var namespace = '/ide';
-var socket = io.connect('http://localhost:5000'  + namespace);
+// var namespace = '/ws';
+var allowedOrigins ="*";
+var socket = io('http://localhost:8080',{
+    path: '/ws'
+});
+//socket.on('connect', function(){});
+//var socket = io.connect('http://localhost:8080'  + namespace);
+
+// socket = new SockJS('http://localhost:8080/ws');
+// stompClient = Stomp.over(socket);
+//
+// stompClient.connect({}, onConnected, onError);
+// function onConnected(frame) {
+//   console.log('connected');
+//   stompClient.subscribe("/topic/private/"+_sid, onMessageReceived);
+//   var _content={"chatRoomId":_sid};
+//   stompClient.send('/app/ide.connect',
+//     {},
+//     JSON.stringify({sender: 'ide', type: 'JOIN',content: JSON.stringify(_content)})
+// );
+//
+// }
+function onError(frame) {
+  console.log('not connected');
+}
+function onMessageReceived(frame){
+  console.log(frame);
+}
 //after connect
 socket.on('connect', function(msg) {
-		socket.emit('/gatchicken/api/v1.0/shakehands', {'sid': _sid});
+    console.log('connected')
+		socket.emit('/app/ide.connect', {'sid': _sid});
 });
+socket.on('/topic/private/'+namespace, function(msg) {
+		console.log(msg);
+});
+
 socket.on('/gatchicken/api/v1.0/ide_ping', function(msg) {
 		socket.emit('/gatchicken/api/v1.0/ide_pong', {});
 });

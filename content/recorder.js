@@ -64,7 +64,7 @@ class Recorder {
           json['windowIdx']=that.recordingIdx;
           browser.runtime.sendMessage(json).catch(function(reason) {
             // If receiving end does not exist, detach the recorder
-            self.detach();
+            that.detach();
           });
         }
       },
@@ -208,7 +208,7 @@ class Recorder {
       command: command,
       target: target,
       value: value,
-      insertBeforeLastCommand: insertBeforeLastCommand,
+      insertBeforeLastCommand: (insertBeforeLastCommand!=undefined)?insertBeforeLastCommand:false,
       frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
       windowIdx: this.recordingIdx
     }

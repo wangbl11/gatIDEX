@@ -4,6 +4,11 @@
     "name": "GatIDEX",
     "version": "1.0.0",
     "homepage_url": "https://github.com/wangbl11/gatIDEX",
+    "options_ui": {
+        "page": "panel/options.html",
+        "browser_style": true,
+        "open_in_tab":true
+    },
     "icons":
     {
         "48": "icons/icons-48.png",
@@ -44,14 +49,14 @@
 
     "background":
     {
-        "scripts": ["common/browser-polyfill.js", "panel/js/recorder.js","background/background.js",
-        "panel/js/background/recorder.js","deps/idb-file-storage.js","background/gatback.js"]
+        "scripts": ["common/browser-polyfill.js", "background/background.js","common/sockjs.min.js","common/stomp.min.js",
+        "panel/js/background/recorder.js","deps/idb-file-storage.js","background/socketclient.js","background/gatback.js"]
     },
 
     "browser_action":
     {
         "default_icon": "icons/icons-48.png",
-        "default_title": "SideeX"
+        "default_title": "GAT IDE"
     },
 
     "web_accessible_resources": ["page/prompt.js", "page/runScript.js"]
