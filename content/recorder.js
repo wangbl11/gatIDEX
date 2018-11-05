@@ -110,6 +110,10 @@ class Recorder {
           }
         }
         this.window.document.addEventListener(eventName, listener, capture);
+        this.window.onpopstate = function(event) {
+            //when user click goback
+            console.log('onpopstate~~~~~~~user click goback~~~~~~~~~~~');
+        };
         this.eventListeners[eventKey] = listener;
       }
       register.call(this);
@@ -199,27 +203,24 @@ class Recorder {
     return father.name ? [father] : [];
   }
 
-  record(command, target, value, insertBeforeLastCommand, actualFrameLocation) {
+  record(command, target, value,evtType, insertBeforeLastCommand, actualFrameLocation) {
     let self = this;
-    //console.log(this.frameLocation);
-
-    //if
     var _json={
       command: command,
       target: target,
       value: value,
       insertBeforeLastCommand: (insertBeforeLastCommand!=undefined)?insertBeforeLastCommand:false,
       frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
-      windowIdx: this.recordingIdx
-    }
-    if (this.recordingIdx == -1) {
-      this.getWindowIdxInScript(1,_json);
-    } else {
-      browser.runtime.sendMessage(_json).catch(function(reason) {
+      winInfo: {
+          type: (this.window == this.window.top)? "top" : "frame",
+          title: this.window.document.title
+      },
+      evtType:(evtType==undefined)?'':evtType
+    };
+    browser.runtime.sendMessage(_json).catch(function(reason) {
         // If receiving end does not exist, detach the recorder
         self.detach();
-      });
-    }
+    });
   }
 }
 
@@ -233,8 +234,6 @@ Recorder.addEventHandler = function(handlerName, eventName, handler, options) {
   }
   this.eventHandlers[key].push(handler);
 }
-
-
 
 // TODO: move to appropriate file
 // show element

@@ -180,7 +180,6 @@ class BackgroundRecorder {
     };
 
     addCommandMessageHandler(message, sender, sendResponse) {
-        console.log(message);
         //|| this.openedWindowIds[sender.tab.windowId] == undefined
         if (!message.command)
             return;
@@ -192,6 +191,7 @@ class BackgroundRecorder {
         // }
         //
         let testCaseId = getSelectedCase().id;
+        //console.log(testCaseId);
 
         if (!this.openedTabIds[testCaseId]) {
             this.openedTabIds[testCaseId] = {};
@@ -201,49 +201,32 @@ class BackgroundRecorder {
             this.currentRecordingWindowId[testCaseId] = sender.tab.windowId;
             this.openedTabCount[testCaseId] = 1;
         }
-
-        if (Object.keys(this.openedTabIds[testCaseId]).length === 0) {
-            this.currentRecordingTabId[testCaseId] = sender.tab.id;
-            this.currentRecordingWindowId[testCaseId] = sender.tab.windowId;
-            this.openedTabNames[testCaseId]["win_ser_local"] = sender.tab.id;
-            this.openedTabIds[testCaseId][sender.tab.id] = "win_ser_local";
-        }
+        // console.log(this.openedTabIds);
+        // if (Object.keys(this.openedTabIds[testCaseId]).length === 0) {
+        //     this.currentRecordingTabId[testCaseId] = sender.tab.id;
+        //     this.currentRecordingWindowId[testCaseId] = sender.tab.windowId;
+        //     this.openedTabNames[testCaseId]["win_ser_local"] = sender.tab.id;
+        //     this.openedTabIds[testCaseId][sender.tab.id] = "win_ser_local";
+        // }
 
         //
-        if (message.command=='gatWindow'){
-               // a new window including top or frame
-               var _one={
-                  "tabId":sender.tab.id,
-                  "windowId":sender.tab.windowId,
-                  "url":sender.url,
-                  "type":message.type,
-                  "topWindowIdx":-1,
-                  "topWindowUrl":message.topUrl,
-                  "frameLocation":message.frameLocation,
-                  "locators":message.locators
+        if (message.command == 'gatWindow') {
+               message['command']='open';
+               message['tabId']=sender.tab.id;
+               message['windowId']=sender.tab.windowId;
+               if (message.type=='top'){
+                   addTopWindow(message);
                }
-               let _ret=addWindow(_one);
-               //if (_ret&&_ret[0]!=-1) _one.frameLocation=_ret[0]+_one.frameLocation;
-
-
-               //new logic to get index
-               console.log(_ret);
-               sendResponse({response:  _ret});
                return;
         }
+        
+        let winInfo=message['winInfo'];
+        if (!winInfo) winInfo={};
+        winInfo['tabId']=sender.tab.id;
+        winInfo['windowId']=sender.tab.windowId;
 
-        if (getRecordsArray().length === 0) {
-            addCommandAuto("open", [
-                [{"finder":"url","values":[sender.tab.url]}]
-            ], sender.tab.url);
-        }
-
-        if (this.openedTabIds[testCaseId][sender.tab.id] == undefined)
-            return;
-
-        // dispose path (frame information)
-
-
+        // if (this.openedTabIds[testCaseId][sender.tab.id] == undefined)
+        //     return;
 
         //
         // if (message.frameLocation !== this.currentRecordingFrameLocation[testCaseId]) {
@@ -314,10 +297,10 @@ class BackgroundRecorder {
 
         //handle choose ok/cancel confirm
         if (message.insertBeforeLastCommand) {
-            addCommandBeforeLastCommand(message.command, message.target, message.value);
+            addCommandBeforeLastCommand(message);
         } else {
             //notification(message.command, message.target, message.value);
-            addCommandAuto(message.command, message.target, message.value,message.windowIdx);
+            addCommandAuto(message);
         }
     }
 

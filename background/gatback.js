@@ -15,31 +15,6 @@
  *  limitations under the License.
  *
  */
-
-/*
-async function test(){
-  try{
- const tmpFiles = await IDBFiles.getFileStorage({
-    name: "tmpFiles"
-  });
-const file = await tmpFiles.createMutableFile("filename.txt");
-const fh = file.open("readwrite");
-
-await fh.append("new file content");
-
-await fh.close();
-
-await file.persist();
-console.log('%%%%%%%%%%%%%%%%%%%')
-const fileNames = await tmpFiles.list();
- console.log(fileNames);
-  await tmpFiles.put('/Users/songjian/t.txt', file);
-
-}catch(err){
-  console.log(err);
-}
-}
-*/
 var elementAttributesTemplate={
 
 };
@@ -47,7 +22,8 @@ var recordingWindows = [];
 var isRecording = true;
 var recordingArray = [];
 var steps = [];
-
+var gat_recorder_uuid;
+var stompClient;
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
   var _json = {
@@ -68,6 +44,53 @@ function getRecordsArray() {
   return recordingArray;
 }
 ///////////////////////////////////////////////////////////////////////////////////
+var socket = new SockJS('http://slc00blb.us.oracle.com:8080/ws');
+var stompClient = Stomp.over(socket);
+stompClient.debug = () => {};
+var uuid = UUID.generate();
+var connected=false;
+var chatRoomId='/app/chat.privateMsg.';
+var reconInt;
+function connectSocketServer() {
+    stompClient.connect({ "id": uuid }, onConnected, onError);
+}
+function onConnected(frame) {
+    console.log('connected');
+    clearInterval(reconInt);
+    stompClient.subscribe("/topic/" + gat_recorder_uuid, onMessageReceived);
+    stompClient.subscribe("/user/exchange/amq.direct/chat.message", onMessageReceived);
+    chatRoomId+=gat_recorder_uuid;
+    // var _content = { "chatRoomId": gat_recorder_uuid };
+    // stompClient.send('/app/chat.privateMsg.' + gat_recorder_uuid,
+    //     {},
+    //     JSON.stringify({ sender: 'ide', type: 'JOIN', content: JSON.stringify(_content) })
+    // );
+}
+function onError(frame) {
+    // console.log(frame);
+    // console.log(stompClient);
+    // console.log(socket);
+    reconInt = setTimeout(() => {
+        if (stompClient.ws.readyState === WebSocket.CONNECTING) {
+            return;
+        }
+        if (stompClient.ws.readyState === WebSocket.OPEN) {
+            clearInterval(reconInt);
+            return;
+        }
+        connectSocketServer();
+    }, 5000);
+}
+function onMessageReceived(frame){
+  console.log(frame);
+}
+
+function emitMessageToConsole(_type,_json){
+    stompClient.send(chatRoomId,
+                {},
+                JSON.stringify({ sender: 'ide', type: _type, content: _json })
+    );
+}
 
 /*Read data from storage */
 function getStorage() {
@@ -76,8 +99,10 @@ function getStorage() {
     gat_runner_vncport = results["gat.runner.vncport"];
     gat_runner_url = results["gat.runner.url"];
     gat_runner_datafile = results["gat.runner.datafile"];
-    gat_runner_sSocketid = results["gat.runner.sSocketid"];
-    console.log(results);
+    gat_recorder_uuid = results["gat.recorder.topicid"];
+    if (!gat_recorder_uuid)
+      gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c'
+    connectSocketServer();
   }, function (message){
     console.log('get wrong with local');
     //default value or default dispose
@@ -99,8 +124,42 @@ function setStorage(key, val) {
 
 var valueCommands = ["type", "clickAt"];
 
+function addTopWindow(winInfo) {
+    var oneself = -1;
+    try {
+      //check whether duplicate
+      console.log(winInfo)
+  
+      for (var i = 0; i < recordingWindows.length; i++) {
+        let _one = recordingWindows[i];
+        if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
+           if (_one['hostname']==winInfo['hostname']){
+                 oneself=i;
+                 break;
+           }
+        } 
+      }
+      if (oneself==-1){ //new window
+        recordingWindows.push(winInfo);
+        let _open={
+            "command":'open',
+            "target":[
+                [{ "finder": "url", "values": [winInfo['url']] }]
+                ],
+            "value":winInfo['url'],
+        }
+        addCommandAuto(_open);
+      }
+      oneself = recordingWindows.length - 1;
+      return oneself;
+    } catch (err) {
+      console.log(err.message);
+    }
+    return -1;
+}
+
 function addWindow(winInfo) {
-  var father;
+  var father=-1;
   var oneself = -1;
   try {
     //check whether duplicate
@@ -108,24 +167,30 @@ function addWindow(winInfo) {
     if (winInfo.type == 'frame') {
       for (var i = 0; i < recordingWindows.length; i++) {
         let _one = recordingWindows[i];
-        if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId && _one.type == 'top') {
+        if (_one.type == 'top'&&_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
           father = i;
           break;
         }
       }
-      if (father) {
+      if (father>-1) {
         winInfo.topWindowIdx = father;
       }
-      else{//if no top winodow is found, create one, then adjust topWindowIdx of its descendants
-         recordingWindows.push({
-           "tabId":winInfo.tabId,
-           "windowId":winInfo.windowId,
-           "url":winInfo.topWindowUrl,
-           "type":"top",
-           "topWindowIdx":-1,
-           "frameLocation":"",
-           "locators":[]
-         });
+      else{
+         //if no top winodow is found, create one for this top, then adjust topWindowIdx of its descendants
+         //whether we should cache it
+         let _winone={
+            "tabId":winInfo.tabId,
+            "windowId":winInfo.windowId,
+            "url":winInfo.topWindowUrl,
+            "origin":"",
+            "type":"top",
+            "topWindowIdx":-1,
+            "frameLocation":"",
+            "locators":[]
+         };
+         recordingWindows.push(_winone);
+         console.log('new top window');
+         emitMessageToConsole('WINDOW',_winone);
          winInfo.topWindowIdx =recordingWindows.length-1;
       }
     }
@@ -133,45 +198,41 @@ function addWindow(winInfo) {
     for (var i = 0; i < recordingWindows.length; i++) {
       let _one = recordingWindows[i];
       if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-        //console.log('^^^^^^^^')
         if (winInfo.type == 'top' || (winInfo.type == 'frame' && _one.frameLocation == winInfo.frameLocation)) {
+          if (_one["origin"].length==0)
+            _one["origin"]=winInfo["origin"];
           oneself = i;
-          break;
+          return i;
         }
-      } else {
-        ;
-      }
+      } 
     }
 
-    if (oneself > -1) return oneself;
-
-    console.log(winInfo);
     delete winInfo['topWindowUrl'];
     recordingWindows.push(winInfo);
+    console.log('emit '+winInfo.type);
+    emitMessageToConsole('WINDOW',winInfo);
+    if (winInfo['type']=='top')
+      addCommandAuto("open", [
+        [{ "finder": "url", "values": [winInfo['url']] }]
+        ], winInfo['url']);
     oneself = recordingWindows.length - 1;
-    setStorage(2, recordingWindows);
-
     return oneself;
+
   } catch (err) {
-    console.log(err);
+    console.log(err.message);
   }
   return -1;
 }
 
-function addCommand(command_name, command_target_array, command_value, auto, insertCommand, frameLocation) {
+
+function addCommand(msg, auto, insertCommand) {
   // create default test suite and case if necessary
   var s_suite = getSelectedSuite(),
     s_case = getSelectedCase();
 
-  // var _frames = [];
-  // if (frameLocation)
-  //   _frames = frameLocation.split(":");
-
-  recordingArray.push({
-    "command": command_name,
-    "target": command_target_array,
-    "value": command_value
-  });
+  let command_name=msg['command'];
+  let command_target_array=msg['target'];
+  let command_value=msg['value'];
   let _json;
   if (command_name == 'open') {
     _json = {
@@ -188,33 +249,41 @@ function addCommand(command_name, command_target_array, command_value, auto, ins
       "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
       "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
       "upperElements": [],
-      "path": frameLocation,
-      //"path": _frames.length == 0 ? "" : _frames[0],
       "value": "",
+      "winInfo":msg['winInfo'],
       "optional": false
     }
     if (valueCommands.indexOf(command_name) >= 0) {
       _json['value'] = command_value;
     }
   }
-  steps.push(_json);
-  //let _changed=JSON.stringify(steps);
-  //console.log(_changed);
-  setStorage(1, steps);
+  //composite display name
+  compositeDisplayName(_json);
+
+  //capture screenshot
+    sshot(_json["coordinates"]).then(function (d) {
+        _json['img'] = d; 
+        if (stompClient){
+            emitMessageToConsole('STEP',_json);
+        }
+        steps.push(_json);
+        setStorage(1, steps); 
+    });
 }
 
 // add command automatically (before last command upward)
-function addCommandBeforeLastCommand(command_name, command_target_array, command_value, frameLocation) {
-    addCommand(command_name, command_target_array, command_value, 1, true, frameLocation);
+function addCommandBeforeLastCommand(msg) {
+    addCommand(msg, 1, true);
 }
 
 // add command automatically (append upward)
-function addCommandAuto(command_name, command_target_array, command_value, frameLocation) {
-  addCommand(command_name, command_target_array, command_value, 1, false, frameLocation);
+function addCommandAuto(msg) {
+  addCommand(msg, 1, false);
 }
 
 //initialize background recorder
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
+getStorage();
 var recorder = new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 recorder.attach();
