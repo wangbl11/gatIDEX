@@ -91,6 +91,7 @@ class Recorder {
 
   // This part of code is copyright by Software Freedom Conservancy(SFC)
   attach() {
+    console.log(this.attached);
     if (this.attached) {
       return;
     }
@@ -213,7 +214,8 @@ class Recorder {
       frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
       winInfo: {
           type: (this.window == this.window.top)? "top" : "frame",
-          title: this.window.document.title
+          title: this.window.document.title,
+          "locators": this.locators?this.locators:[]
       },
       evtType:(evtType==undefined)?'':evtType
     };

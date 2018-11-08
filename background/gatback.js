@@ -15,15 +15,19 @@
  *  limitations under the License.
  *
  */
+var extCommand = new ExtCommand();
 var elementAttributesTemplate={
 
 };
 var recordingWindows = [];
 var isRecording = true;
 var recordingArray = [];
+var stepsCount=0;
 var steps = [];
 var gat_recorder_uuid;
 var stompClient;
+var isRecording = false;
+var isPlaying=false;
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
   var _json = {
@@ -81,10 +85,57 @@ function onError(frame) {
         connectSocketServer();
     }, 5000);
 }
-function onMessageReceived(frame){
-  console.log(frame);
+function onMessageReceived1(frame){
+    console.log("from /topic/" + gat_recorder_uuid);
 }
-
+function onMessageReceived(frame){
+    console.log('~~~~~~~~~ received message');
+    let _body=frame.body;
+    let _json=JSON.parse(_body);
+    let _msg=_json['message'];
+    console.log(_msg);
+    if (_msg)
+    {
+        _msg=JSON.parse(_msg);
+        let _command=_msg['command'];
+        if (_command)
+        {
+             switch (_command){
+                case "stopRecord":
+                case "startRecord":
+                   isRecording = !isRecording;
+                   recordEngine();
+                default:
+                   ;
+             }
+        }
+    }
+}
+function recordEngine(){
+    if (isRecording) {
+        recorder.attach();
+        notificationCount = 0;
+        //console.log(extCommand.getContentWindowId());
+        browser.tabs.query({url: "<all_urls>"})
+        .then(function(tabs) {
+            for(let tab of tabs) {
+                console.log(tab.id);
+                browser.tabs.sendMessage(tab.id, {attachRecorder: true});
+            }
+            console.log('finish attaching');
+        });
+       
+    }
+    else {
+        recorder.detach();
+        browser.tabs.query({windowId: extCommand.getContentWindowId(), url: "<all_urls>"})
+        .then(function(tabs) {
+            for(let tab of tabs) {
+                browser.tabs.sendMessage(tab.id, {detachRecorder: true});
+            }
+        });
+    }
+}
 function emitMessageToConsole(_type,_json){
     stompClient.send(chatRoomId,
                 {},
@@ -264,6 +315,7 @@ function addCommand(msg, auto, insertCommand) {
     sshot(_json["coordinates"]).then(function (d) {
         _json['img'] = d; 
         if (stompClient){
+            stepsCount++;
             emitMessageToConsole('STEP',_json);
         }
         steps.push(_json);
@@ -280,12 +332,35 @@ function addCommandBeforeLastCommand(msg) {
 function addCommandAuto(msg) {
   addCommand(msg, 1, false);
 }
+function fromContentScript(message, sender, sendResponse) {
+    console.log('in background/gatback.js');
+    if (message.attachRecorderRequest) {
+        if (isRecording && !isPlaying) {
+            console.log(sender.tab.id);
+            browser.tabs.sendMessage(sender.tab.id, { attachRecorder: true });
+        }
+        else{
+            console.log("not in recording mode");
+        }
+
+    }else{
+        if (!isRecording && message.command && message.command == 'gatWindow' && stepsCount == 0) {
+            message['command'] = 'open';
+            message['tabId'] = sender.tab.id;
+            message['windowId'] = sender.tab.windowId;
+            if (message.type == 'top') {
+                addTopWindow(message);
+            }
+        }
+    }
+}
+browser.runtime.onMessage.addListener(fromContentScript);
 
 //initialize background recorder
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 getStorage();
 var recorder = new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
-recorder.attach();
+//recorder.attach();
 
 //loop all existing tab to send attachRecorder info

@@ -181,6 +181,8 @@ class BackgroundRecorder {
 
     addCommandMessageHandler(message, sender, sendResponse) {
         //|| this.openedWindowIds[sender.tab.windowId] == undefined
+        console.log('in background/recorder.js');
+
         if (!message.command)
             return;
 
@@ -316,11 +318,13 @@ class BackgroundRecorder {
         this.tabsOnActivatedHandler = this.tabsOnActivatedHandler.bind(this);
         this.windowsOnFocusChangedHandler = this.windowsOnFocusChangedHandler.bind(this);
         this.tabsOnRemovedHandler = this.tabsOnRemovedHandler.bind(this);
-        this.webNavigationOnCreatedNavigationTargetHandler = this.webNavigationOnCreatedNavigationTargetHandler.bind(this);
+        if (browser.webNavigation.onCreatedNavigationTarget)
+          this.webNavigationOnCreatedNavigationTargetHandler = this.webNavigationOnCreatedNavigationTargetHandler.bind(this);
         this.addCommandMessageHandler = this.addCommandMessageHandler.bind(this);
     }
 
     attach() {
+        console.log(this.attached);
         if (this.attached) {
             return;
         }
@@ -332,6 +336,7 @@ class BackgroundRecorder {
         if (browser.webNavigation.onCreatedNavigationTarget)
           browser.webNavigation.onCreatedNavigationTarget.addListener(this.webNavigationOnCreatedNavigationTargetHandler);
         browser.runtime.onMessage.addListener(this.addCommandMessageHandler);
+        console.log('attaching listeners');
     }
 
     detach() {
@@ -342,7 +347,8 @@ class BackgroundRecorder {
         browser.tabs.onActivated.removeListener(this.tabsOnActivatedHandler);
         browser.windows.onFocusChanged.removeListener(this.windowsOnFocusChangedHandler);
         browser.tabs.onRemoved.removeListener(this.tabsOnRemovedHandler);
-        browser.webNavigation.onCreatedNavigationTarget.removeListener(this.webNavigationOnCreatedNavigationTargetHandler);
+        if (browser.webNavigation.onCreatedNavigationTarget)
+         browser.webNavigation.onCreatedNavigationTarget.removeListener(this.webNavigationOnCreatedNavigationTargetHandler);
         browser.runtime.onMessage.removeListener(this.addCommandMessageHandler);
     }
 

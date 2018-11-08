@@ -108,6 +108,7 @@ function doCommands(request, sender, sendResponse, type) {
     }
     // TODO: code refactoring
     if (request.attachRecorder) {
+        console.log('attach...');
         recorder.attach();
         return;
     } else if (request.detachRecorder) {

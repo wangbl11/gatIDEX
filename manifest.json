@@ -2,7 +2,7 @@
     "description": "Oracle Globalization Automation Technology - Recording IDE",
     "manifest_version": 2,
     "name": "GatIDEX",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "homepage_url": "https://github.com/wangbl11/gatIDEX",
     "options_ui": {
         "page": "panel/options.html",
@@ -34,8 +34,8 @@
             "matches": ["<all_urls>"],
             "js": ["content/atoms.js", "content/utils.js","content/tools.js", "content/selenium-browserbot.js",
                    "common/escape.js", "content/selenium-api.js", "content/locatorBuilders.js",
-                   "content/recorder.js", "content/recorder-handlers.js", "content/command-receiver.js",
-                   "content/targetSelecter.js", "content/sizzle.js","content/gatide.js"],
+                   "content/recorder.js", "content/recorder-handlers.js","content/gatide.js", "content/command-receiver.js",
+                   "content/targetSelecter.js", "content/sizzle.js"],
             "match_about_blank": false,
             "all_frames": true
         },
@@ -51,7 +51,7 @@
     "background":
     {
         "scripts": ["common/uuid.js","background/tools.js","background/displayName.js","common/browser-polyfill.js", "background/background.js","common/sockjs.min.js","common/stomp.min.js",
-        "panel/js/background/recorder.js","deps/idb-file-storage.js","background/gatback.js"]
+        "panel/js/background/recorder.js","deps/idb-file-storage.js","panel/js/background/window-controller.js","background/gatback.js"]
     },
 
     "browser_action":

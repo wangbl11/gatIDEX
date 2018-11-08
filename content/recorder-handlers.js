@@ -600,12 +600,14 @@ Recorder.addEventHandler('editContent', 'blur', function(event) {
 }, true);
 // END
 
+//console.log('~~~~~~~~called when every page load');
 browser.runtime.sendMessage({
     attachRecorderRequest: true
 }).catch(function(reason){
     // Failed silently if receiveing end does not exist
     console.log(reason.message);
 });
+//console.log('~~~~~~~~called when every page load');
 
 // Copyright 2005 Shinya Kasatani
 Recorder.prototype.getOptionLocator = function(option) {

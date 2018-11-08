@@ -1,8 +1,9 @@
 document.body.style.border = "5px solid green";
+
 var recorder = new Recorder(window);
 console.log('%%%%%%%%%%%%%%%%%%%%%%');
 // attach directly, not trigger by UI in gatIDEX
-recorder.attach();
+//recorder.attach();
 //console.log('#######################');
 
 //we dispose window info in this script
