@@ -115,7 +115,7 @@ function recordEngine(){
     if (isRecording) {
         recorder.attach();
         notificationCount = 0;
-        //console.log(extCommand.getContentWindowId());
+        console.log(extCommand.getContentWindowId());
         browser.tabs.query({url: "<all_urls>"})
         .then(function(tabs) {
             for(let tab of tabs) {
@@ -319,7 +319,7 @@ function addCommand(msg, auto, insertCommand) {
             emitMessageToConsole('STEP',_json);
         }
         steps.push(_json);
-        setStorage(1, steps); 
+        //setStorage(1, steps); 
     });
 }
 

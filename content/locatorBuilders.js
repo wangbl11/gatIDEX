@@ -122,7 +122,7 @@ LocatorBuilders.prototype.clickLabel=function(e){
             let _new={
                 //"finder": finderName,
                 "finder": _category,
-                "values": [locator]
+                "values": [_category=='css'?locator.replace(/css=/,""):locator]
             };
             // if (finderName.indexOf(':text')<0){
             //     if (locator.search(/\[\d+\]/g)>0)
@@ -142,7 +142,7 @@ LocatorBuilders.prototype.clickLabel=function(e){
         _main.splice(0, 0, {
           //"finder": finderName,
           "finder": _category,
-          "values": [locator]
+          "values": [_category=='css'?locator.replace(/css=/,""):locator]
         });
       }
 }
