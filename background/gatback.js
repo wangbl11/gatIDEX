@@ -16,6 +16,7 @@
  *
  */
 var extCommand = new ExtCommand();
+var sentMessagesCnt=0;
 var elementAttributesTemplate={
 
 };
@@ -102,9 +103,13 @@ function onMessageReceived(frame){
         {
              switch (_command){
                 case "stopRecord":
-                case "startRecord":
-                   isRecording = !isRecording;
+                   isRecording = false;
                    recordEngine();
+                   break;
+                case "startRecord":
+                   isRecording = true;
+                   recordEngine();
+                   break;
                 default:
                    ;
              }
@@ -112,31 +117,74 @@ function onMessageReceived(frame){
     }
 }
 function recordEngine(){
+    let _tabs=[];
     if (isRecording) {
         recorder.attach();
         notificationCount = 0;
+        let _tabs=[];
         console.log(extCommand.getContentWindowId());
         browser.tabs.query({url: "<all_urls>"})
         .then(function(tabs) {
             for(let tab of tabs) {
-                console.log(tab.id);
-                browser.tabs.sendMessage(tab.id, {attachRecorder: true});
+                _tabs.push(
+                browser.tabs.sendMessage(tab.id, {attachRecorder: true}).then(
+                    function(rst){
+                        console.log(tab.id+' attached...');
+                    }
+                ));
             }
-            console.log('finish attaching');
+            Promise.all(_tabs).then(function (result) {
+                console.log('fully finish attaching...');
+                emitMessageToConsole('SYSTEM',{"command":"finishStart"});
+                _tabs.length=0;
+            });     
         });
        
     }
     else {
         recorder.detach();
-        browser.tabs.query({windowId: extCommand.getContentWindowId(), url: "<all_urls>"})
+        //ensure all window(s)/frame(s) have detached.
+        browser.tabs.query({url: "<all_urls>"})
         .then(function(tabs) {
+            let _tabs=[];
             for(let tab of tabs) {
-                browser.tabs.sendMessage(tab.id, {detachRecorder: true});
+                _tabs.push(browser.tabs.sendMessage(tab.id, {detachRecorder: true})
+                .then(function(rst){
+                    console.log(tab.id+' detached...');
+                }
+                ));
             }
+            Promise.all(_tabs).then(function (result) {
+                console.log('fully finish...');
+                emitMessageToConsole('SYSTEM',{"command":"finishStop"});
+                _tabs.length=0;
+            });            
         });
     }
 }
+function ignoreLastStep(_last,_json){
+    let _ignore=false;
+    return _ignore;
+}
 function emitMessageToConsole(_type,_json){
+    //if not in recording mode, ignore all messages
+    let _send=false;
+    if (_type=='SYSTEM') _send=true;
+    else
+        if (isRecording) _send=true;
+        else if (steps.length==0) _send=true;
+
+    if (!_send) return;
+    if (_json['optional']==undefined)
+      _json['optional']=false;
+    
+    // if (sentMessagesCnt==0){
+    //     stompClient.send(chatRoomId,
+    //         {},
+    //         JSON.stringify({ sender: 'ide', type: _type, content: steps[0] })
+    //     );
+    //     sentMessagesCnt++;
+    // }
     stompClient.send(chatRoomId,
                 {},
                 JSON.stringify({ sender: 'ide', type: _type, content: _json })
@@ -216,6 +264,8 @@ function addWindow(winInfo) {
     //check whether duplicate
     console.log(winInfo)
     if (winInfo.type == 'frame') {
+      winInfo['frame_locators']=winInfo['locators'];
+      winInfo['locators']=[];
       for (var i = 0; i < recordingWindows.length; i++) {
         let _one = recordingWindows[i];
         if (_one.type == 'top'&&_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
@@ -277,6 +327,7 @@ function addWindow(winInfo) {
 
 
 function addCommand(msg, auto, insertCommand) {
+  if (!isRecording&&steps.length>0) return;
   // create default test suite and case if necessary
   var s_suite = getSelectedSuite(),
     s_case = getSelectedCase();
@@ -296,10 +347,12 @@ function addCommand(msg, auto, insertCommand) {
   } else {
     _json = {
       "command": command_name,
-      "locators": command_target_array && command_target_array.length > 0 ? command_target_array[0] : {},
+      "locators": {
+          "seleniumLocators":command_target_array && command_target_array.length > 0 ? command_target_array[0] : [],
+          "genericLocator":command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
+      },
       "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
       "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
-      "upperElements": [],
       "value": "",
       "winInfo":msg['winInfo'],
       "optional": false
@@ -319,7 +372,7 @@ function addCommand(msg, auto, insertCommand) {
             emitMessageToConsole('STEP',_json);
         }
         steps.push(_json);
-        //setStorage(1, steps); 
+        setStorage(1, steps); 
     });
 }
 
@@ -344,7 +397,7 @@ function fromContentScript(message, sender, sendResponse) {
         }
 
     }else{
-        if (!isRecording && message.command && message.command == 'gatWindow' && stepsCount == 0) {
+        if (message.command && message.command == 'gatWindow' && stepsCount == 0) {
             message['command'] = 'open';
             message['tabId'] = sender.tab.id;
             message['windowId'] = sender.tab.windowId;

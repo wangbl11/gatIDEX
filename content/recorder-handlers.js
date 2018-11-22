@@ -20,6 +20,7 @@ var typeLock = 0;
 Recorder.inputTypes = ["text", "password", "file", "datetime", "datetime-local", "date", "month", "time", "week", "number", "range", "email", "url", "search", "tel", "color"];
 Recorder.addEventHandler('type', 'change', function(event) {
     // © Chen-Chieh Ping, SideeX Team
+    console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ change');
     let target=event.target
     if (target.tagName && !preventType && typeLock == 0 && (typeLock = 1)) {
         // END

@@ -26,7 +26,8 @@ class Recorder {
 
     try {
       if (window != window.top && window.frameElement) {
-        this.locators = [{"finder":"xpath","values":this.buildFrameLocators(window.frameElement)}];
+        this.locators = this.getFrameLocation1();
+        console.log(JSON.stringify(this.locators));
       }
     } catch (e) {
       console.log(e);
@@ -36,13 +37,9 @@ class Recorder {
     //  this.getWindowIdxInScript(0);
   }
 
-  buildFrameLocators(myframe){
-    var locators=[];
-    if (myframe.hasAttribute('id'))
-       locators.push('//iframe[@id="'+myframe.getAttribute('id')+'"]')
-
-       locators.push(this.getFrameLocation1());
-
+  buildFrameLocators(){
+    let _json=this.getFrameLocation1();
+    let locators= _json && _json.length > 0?_json[0]:[]
     return locators;
   }
   getWindowIdxInScript(mode,json){
@@ -53,6 +50,8 @@ class Recorder {
       "frameLocation": this.frameLocation,
       "locators": this.locators?this.locators:[]
     });
+
+    //frames has its own frames node
 
     var that = this;
     sending.then(
@@ -157,6 +156,7 @@ class Recorder {
     let currentWindow = window;
     let currentParentWindow;
     let frameLocation = ""
+    let _frames=[];
     while (currentWindow !== window.top) {
       let currentNode=currentWindow.frameElement;
       let currentNodeName=currentNode.nodeName?currentNode.nodeName.toLowerCase():"*";
@@ -164,12 +164,24 @@ class Recorder {
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
           frameLocation = "/"+currentNodeName+"[" + (idx+1) +"]"+ frameLocation;
+          
+          /////loop to its ancestor//////////////////////////////////
+          this.locatorBuilders.window=currentParentWindow;
+          this.locatorBuilders.doc=currentParentWindow.document;
+          let _ret=this.locatorBuilders.buildAll(currentWindow.frameElement);
+          if (_frames.length==0)
+             _frames.push(_ret&&_ret.length>0?_ret[0]:[]);
+          else
+             _frames.unshift(_ret&&_ret.length>0?_ret[0]:[]);
+          /////////////////////////////////////////
+
           currentWindow = currentParentWindow;
           break;
         }
     }
-    //return frameLocation = "0" + frameLocation;
-    return frameLocation.length == 0 ? frameLocation : "/"+frameLocation;
+    this.locatorBuilders.reset(this.window);
+    return _frames;
+    //return frameLocation.length == 0 ? frameLocation : "/"+frameLocation;
   }
 
   getFrameLocations() {
@@ -215,10 +227,13 @@ class Recorder {
       winInfo: {
           type: (this.window == this.window.top)? "top" : "frame",
           title: this.window.document.title,
-          "locators": this.locators?this.locators:[]
+          "locators": []
       },
       evtType:(evtType==undefined)?'':evtType
     };
+    if (this.window != this.window.top){
+        _json['winInfo']['frameLocators']=this.locators?this.locators:[];
+    }
     browser.runtime.sendMessage(_json).catch(function(reason) {
         // If receiving end does not exist, detach the recorder
         self.detach();
