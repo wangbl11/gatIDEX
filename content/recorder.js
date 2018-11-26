@@ -30,11 +30,9 @@ class Recorder {
         console.log(JSON.stringify(this.locators));
       }
     } catch (e) {
-      console.log(e);
+      console.log(e.message);
     }
-    //write window[frame] info when record the first step on it.
-    //if (window == window.top)
-    //  this.getWindowIdxInScript(0);
+
   }
 
   buildFrameLocators(){
@@ -42,37 +40,7 @@ class Recorder {
     let locators= _json && _json.length > 0?_json[0]:[]
     return locators;
   }
-  getWindowIdxInScript(mode,json){
-    var sending = browser.runtime.sendMessage({
-      "command": "gatWindow",
-      "topUrl":window.top.location.href,
-      "type": window == window.top ? "top" : "frame",
-      "frameLocation": this.frameLocation,
-      "locators": this.locators?this.locators:[]
-    });
-
-    //frames has its own frames node
-
-    var that = this;
-    sending.then(
-      function(message) {
-        that.recordingIdx = message.response;
-        //console.log('------->' + that.recordingIdx)
-
-        if (mode==1){
-          json['windowIdx']=that.recordingIdx;
-          browser.runtime.sendMessage(json).catch(function(reason) {
-            // If receiving end does not exist, detach the recorder
-            that.detach();
-          });
-        }
-      },
-      function(error) {
-        console.log(`Error: ${error}`);
-      }
-    );
-  }
-
+  
   // This part of code is copyright by Software Freedom Conservancy(SFC)
   parseEventKey(eventKey) {
     if (eventKey.match(/^C_/)) {
@@ -159,6 +127,7 @@ class Recorder {
     let _frames=[];
     while (currentWindow !== window.top) {
       let currentNode=currentWindow.frameElement;
+      if (currentNode==null) break;
       let currentNodeName=currentNode.nodeName?currentNode.nodeName.toLowerCase():"*";
       currentParentWindow = currentWindow.parent;
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
@@ -204,8 +173,7 @@ class Recorder {
           children.push(_lastone)
         } else {
           children.push({
-            "name": _frame.name,
-            "locators": []
+            "name": _frame.name
           });
         }
       }
@@ -216,6 +184,16 @@ class Recorder {
     return father.name ? [father] : [];
   }
 
+  getWinInfo(){
+      let _json={
+        type: (this.window == this.window.top)? "top" : "frame",
+        title: this.window.document.title
+    };
+    if (this.window != this.window.top){
+        _json['frameLocators']=this.locators?this.locators:[];
+    }
+    return _json;
+  }
   record(command, target, value,evtType, insertBeforeLastCommand, actualFrameLocation) {
     let self = this;
     var _json={
@@ -226,8 +204,7 @@ class Recorder {
       frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
       winInfo: {
           type: (this.window == this.window.top)? "top" : "frame",
-          title: this.window.document.title,
-          "locators": []
+          title: this.window.document.title
       },
       evtType:(evtType==undefined)?'':evtType
     };

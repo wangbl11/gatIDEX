@@ -21,7 +21,6 @@ var elementAttributesTemplate={
 
 };
 var recordingWindows = [];
-var isRecording = true;
 var recordingArray = [];
 var stepsCount=0;
 var steps = [];
@@ -29,6 +28,8 @@ var gat_recorder_uuid;
 var stompClient;
 var isRecording = false;
 var isPlaying=false;
+var isSelecting=false;
+
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
   var _json = {
@@ -110,11 +111,50 @@ function onMessageReceived(frame){
                    isRecording = true;
                    recordEngine();
                    break;
+                case "startSelect":
+                   isRecording=false;
+                   isSelecting=true;
+                   selectElement();
+                   break;
+                case "stopSelect":
+                   isRecording=false;
+                   isSelecting=false;
+                   selectElement();
+                   break;
                 default:
                    ;
              }
         }
     }
+}
+function selectElement(){
+    //how to get the contentWindowId, from extcommand?????
+
+    if (isSelecting){
+        //send select command to active content page script
+        browser.tabs.query({
+          active: true,
+          currentWindow: true
+        }).then(function(tabs) {
+          if (tabs.length === 0) {
+            console.log("No match tabs");
+            isSelecting = false;
+          } else
+            browser.tabs.sendMessage(tabs[0].id, {selectMode: true, selecting: true});
+       });
+    }
+    else{
+        //send unselect command to active content page script
+        browser.tabs.query({
+            active: true,
+            currentWindow: true
+        }).then(function(tabs) {
+            browser.tabs.sendMessage(tabs[0].id, {selectMode: true, selecting: false});
+        }).catch(function(reason) {
+            console.log(reason);
+        })
+    }
+    
 }
 function recordEngine(){
     let _tabs=[];
@@ -286,8 +326,7 @@ function addWindow(winInfo) {
             "origin":"",
             "type":"top",
             "topWindowIdx":-1,
-            "frameLocation":"",
-            "locators":[]
+            "frameLocation":""
          };
          recordingWindows.push(_winone);
          console.log('new top window');
@@ -387,6 +426,10 @@ function addCommandAuto(msg) {
 }
 function fromContentScript(message, sender, sendResponse) {
     console.log('in background/gatback.js');
+    if (message['winInfo']){
+        message['winInfo']['tabId']=sender.tab.id;
+        message['winInfo']['windowId']=sender.tab.windowId;
+    }
     if (message.attachRecorderRequest) {
         if (isRecording && !isPlaying) {
             console.log(sender.tab.id);
@@ -396,7 +439,39 @@ function fromContentScript(message, sender, sendResponse) {
             console.log("not in recording mode");
         }
 
-    }else{
+    }else if (message.finishSelect){//finish select
+        if (isSelecting){
+            isSelecting=false;
+            selectElement();
+            if (message.selectTarget){
+                let _json={
+                    "found":true,
+                    "command":"finishSelect"
+                };
+                 _json["locators"]= {
+                        "seleniumLocators":message.target && message.target.length > 0 ? message.target[0] : [],
+                        "genericLocator":message.target && message.target.length > 3 ? message.target[3] : {}
+                };
+                _json['coordinates']=message.target && message.target.length > 1 ? message.target[2] : {};
+                _json['elementAttributes']=message.target && message.target.length > 1 ? message.target[1] : {};
+                _json['winInfo']=message.winInfo;
+                sshot(_json["coordinates"]).then(function (d) {
+                    _json['img'] = d; 
+                    if (stompClient){
+                        emitMessageToConsole('SYSTEM',_json);
+                    }
+                });
+            }
+            else{
+                emitMessageToConsole('SYSTEM',{"command":"finishSelect","found":false});
+            }
+        }
+    }else if (message.cancelSelectTarget){
+        isSelecting=false;
+        selectElement();
+    }
+    else
+    {
         if (message.command && message.command == 'gatWindow' && stepsCount == 0) {
             message['command'] = 'open';
             message['tabId'] = sender.tab.id;
@@ -407,6 +482,42 @@ function fromContentScript(message, sender, sendResponse) {
         }
     }
 }
+
+// showElementButton.addEventListener("click", function(){
+//     try{
+//         var targetValue = document.getElementById("command-target").value;
+//         if (targetValue == "auto-located-by-tac") {
+//             targetValue = document.getElementById("command-target-list").options[0].text;
+//         }
+//         browser.tabs.query({
+//             active: true,
+//             windowId: contentWindowId
+//         }).then(function(tabs) {
+//             if (tabs.length === 0) {
+//                 console.log("No match tabs");
+//             } else {
+//                 browser.webNavigation.getAllFrames({tabId: tabs[0].id})
+//                     .then(function(framesInfo){
+//                         var frameIds = [];
+//                         for (let i = 0; i < framesInfo.length; i++) {
+//                             frameIds.push(framesInfo[i].frameId)
+//                         }
+//                         frameIds.sort();
+//                         var infos = {
+//                             "index": 0,
+//                             "tabId": tabs[0].id,
+//                             "frameIds": frameIds,
+//                             "targetValue": targetValue
+//                         };
+//                         sendShowElementMessage(infos);
+//                     });
+//             }
+//         });
+//     } catch (e) {
+//         console.error(e);
+//     }
+// });
+
 browser.runtime.onMessage.addListener(fromContentScript);
 
 //initialize background recorder

@@ -33,7 +33,7 @@ GenericLocators.prototype.gl_genGenericLocator = function(element){
   // 3. Generate element's location - should ignore it due to upper container already generate its coordinates
   //this.gl_genLocation(element, genericLocator);
   // 4. Capture screenshot of such element
-  this.gl_grabElementCanvas(element, genericLocator);
+  //this.gl_grabElementCanvas(element, genericLocator);
   return genericLocator;
 };
 /*

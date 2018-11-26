@@ -582,6 +582,7 @@ LocatorBuilders.prototype.getCSSSubPath = function(e) {
 
 LocatorBuilders.prototype.preciseXPath = function(xpath, e) {
   //only create more precise xpath if needed
+  console.log(xpath);
   if (this.findElement(xpath) != e) {
     var result = e.ownerDocument.evaluate(xpath, e.ownerDocument, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     //skip first element (result:0 xpath index:1)
@@ -1221,7 +1222,7 @@ LocatorBuilders.add('txt:descendant', function(e) {
 },'xpath');
 
 LocatorBuilders.add('xpath:img', function(e) {
-  if (e.nodeName == 'IMG') {
+  if (e.nodeName && e.nodeName.toLowerCase() == 'img') {
     if (e.alt != '') {
       return this.preciseXPath("//" + this.xpathHtmlElement("img") + "[@alt=" + this.attributeValue(e.alt) + "]", e);
     } else if (e.title != '') {
@@ -1258,7 +1259,7 @@ LocatorBuilders.add('xpath:attributes', function(e) {
           }
           if (_dyId) continue;
       }
-      if (i > 0) {
+      if (_validCnt > 0) {
         locator += " and ";
       }
       var attName = attNames[i];

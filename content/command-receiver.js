@@ -73,16 +73,19 @@ function doCommands(request, sender, sendResponse, type) {
     // TODO: refactoring
     if (request.selectMode) {
         if (request.selecting) {
+            console.log('choosing...');
             targetSelecter = new TargetSelecter(function (element, win) {
                 if (element && win) {
-                    //var locatorBuilders = new LocatorBuilders(win);
+                    
                     var target = locatorBuilders.buildAll(element);
                     locatorBuilders.detach();
                     if (target != null && target instanceof Array) {
-                        if (target) {
-                            //self.editor.treeView.updateCurrentCommand('targetCandidates', target);
+                          if (target) {
+                            
                             browser.runtime.sendMessage({
+                                finishSelect:true,
                                 selectTarget: true,
+                                winInfo:recorder.getWinInfo(),
                                 target: target
                             })
                         } else {
