@@ -15,10 +15,10 @@ function compositeDisplayName(json){
           json["display"]=`${json.command} '${json.value}'`;
           break;
         case "check":
-          json["display"]=`${json.command}`;
+          json["display"]=`${json.command} element `;
           break;
         case "javascript":
-          json["display"]=`${json.command}`;
+          json["display"]=`${json.command} element `;
           break;
         case "dragAndDrop":
           json["display"]=`${json.command}`;

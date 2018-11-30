@@ -26,19 +26,15 @@ class Recorder {
 
     try {
       if (window != window.top && window.frameElement) {
-        this.locators = this.getFrameLocation1();
+        let _temp = this.getFrameLocation1();
+        this.locators=_temp&&_temp.length>0?_temp[0]:[];
+        this.positions=_temp&&_temp.length>1?_temp[1]:[];
         console.log(JSON.stringify(this.locators));
       }
     } catch (e) {
       console.log(e.message);
     }
 
-  }
-
-  buildFrameLocators(){
-    let _json=this.getFrameLocation1();
-    let locators= _json && _json.length > 0?_json[0]:[]
-    return locators;
   }
   
   // This part of code is copyright by Software Freedom Conservancy(SFC)
@@ -125,6 +121,7 @@ class Recorder {
     let currentParentWindow;
     let frameLocation = ""
     let _frames=[];
+    let _positions=[];
     while (currentWindow !== window.top) {
       let currentNode=currentWindow.frameElement;
       if (currentNode==null) break;
@@ -139,17 +136,23 @@ class Recorder {
           this.locatorBuilders.doc=currentParentWindow.document;
           let _ret=this.locatorBuilders.buildAll(currentWindow.frameElement);
           if (_frames.length==0)
-             _frames.push(_ret&&_ret.length>0?_ret[0]:[]);
+          {   
+              _frames.push(_ret&&_ret.length>0?_ret[0]:[]);
+              _positions.push(_ret&&_ret.length>1?_ret[1]:{});
+          }
           else
-             _frames.unshift(_ret&&_ret.length>0?_ret[0]:[]);
-          /////////////////////////////////////////
+          {
+              _frames.unshift(_ret&&_ret.length>0?_ret[0]:[]);
+              _positions.unshift(_ret&&_ret.length>1?_ret[1]:{});
+          }
+            /////////////////////////////////////////
 
           currentWindow = currentParentWindow;
           break;
         }
     }
     this.locatorBuilders.reset(this.window);
-    return _frames;
+    return [_frames,_positions];
     //return frameLocation.length == 0 ? frameLocation : "/"+frameLocation;
   }
 
@@ -191,6 +194,7 @@ class Recorder {
     };
     if (this.window != this.window.top){
         _json['frameLocators']=this.locators?this.locators:[];
+        _json['framePositions']=this.positions?this.positions:[];
     }
     return _json;
   }

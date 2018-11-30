@@ -33,7 +33,7 @@ GenericLocators.prototype.gl_genGenericLocator = function(element){
   // 3. Generate element's location - should ignore it due to upper container already generate its coordinates
   //this.gl_genLocation(element, genericLocator);
   // 4. Capture screenshot of such element
-  //this.gl_grabElementCanvas(element, genericLocator);
+  this.gl_grabElementCanvas(element, genericLocator);
   return genericLocator;
 };
 /*
@@ -204,93 +204,8 @@ GenericLocators.prototype.gl_getPathToAncestor = function(current, ancestor){
  */
 GenericLocators.prototype.gl_grabElementCanvas = function(element, genericLocator) {
   genericLocator['image'] = '';
-  var documentElement = document.documentElement;
-  if (!documentElement) {
-    console.log('[ERROR] Page is not loaded yet!');
-    return;
-  }
-  var fullpage_canvas = document.getElementById('fullpage');
-  if (fullpage_canvas == null) {
-    fullpage_canvas = document.createElement('canvas');
-    fullpage_canvas.id = 'fullpage';
-    fullpage_canvas.style.display = 'none';
-    documentElement.appendChild(fullpage_canvas);
-  }
-  var width = documentElement.scrollWidth;
-  if (document.body && document.body.scrollWidth > width) {
-    width = document.body.scrollWidth;
-  }
-  var height = documentElement.scrollHeight;
-  if (document.body && document.body.scrollHeight > height) {
-    height = document.body.scrollHeight;
-  }
-  // CanvasRenderingContext2D::DrawWindow limits width and height up to 65535
-  //  > 65535 leads to NS_ERROR_FAILURE
-  //
-  // HTMLCanvasElement::ToDataURLImpl limits width and height up to 32767
-  //  >= 32769 leads to NS_ERROR_FAILURE
-  //  = 32768 leads to black image (moz issue?).
-  var limit = 32767;
-  if (width >= limit) {
-    width = limit - 1;
-  }
-  if (height >= limit) {
-    height = limit - 1;
-  }
-  fullpage_canvas.width = width;
-  fullpage_canvas.height = height;
-  try {
-    var fullpage_context = fullpage_canvas.getContext('2d');
-  } catch (e) {
-    console.log('[ERROR] Unable to get context - ' + e);
-    return;
-  }
-  try {
-    // Draw image with whole window contents
-    fullpage_context.drawWindow(window, 0, 0, width, height, 'rgb(255,255,255)');
-  } catch (e) {
-    console.log('[ERROR] Unable to draw window - ' + e);
-    return;
-  }
-  try {
-    // Getting element's rect
-    var elemRect = element.getBoundingClientRect();
-    // Getting partial image data of such found element
-    var imageData = fullpage_context.getImageData(elemRect.x, elemRect.y, elemRect.width, elemRect.height);
-  } catch (e) {
-    console.log('[ERROR] Unable to get image data - ' + e);
-    return;
-  }
-  // Create a new canvas for clip
-  var canvas = document.getElementById('foundelement');
-  if (canvas == null) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'foundelement';
-    canvas.style.display = 'none';
-    canvas.width = elemRect.width;
-    canvas.height = elemRect.height;
-    documentElement.appendChild(canvas);
-  }
-  try {
-    var cxt = canvas.getContext('2d');
-  } catch (e) {
-    console.log('[ERROR] Unable to get context - ' + e);
-    return;
-  }
-  try {
-    cxt.putImageData(imageData, 0, 0);
-  } catch (e) {
-    console.log('[ERROR] Unable to draw image data back - ' + e);
-    return;
-  }
-  try {
-    var dataUrl = canvas.toDataURL('image/png');
-    // Note down the image data in base64 string
-    genericLocator['image'] = dataUrl;
-    // Remove the canvas child element
-    documentElement.removeChild(canvas);
-  } catch (e) {
-    console.log('[ERROR] Unable to load canvas into base64 string - ' + e);
-    return;
-  }
+  // Getting element's rect
+  var elemRect = element.getBoundingClientRect();
+  // Capture visible screen
+  // Logic moved to background
 };

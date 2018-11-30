@@ -11,7 +11,7 @@ function uuid() {
     var uuid = s.join("");
     return uuid;
 }
-function sshot(request) {
+function sshot(request,winInfo) {
     return new Promise(function (resolve, reject) {
         chrome.tabs.captureVisibleTab(null, { format: 'jpeg' }, (dataUrl) => {
             let _section=false;
@@ -23,7 +23,7 @@ function sshot(request) {
             let ctx = canvas.getContext('2d');
             let img = new Image();
             let left,top,width,height;
-            //console.log('converting.....');
+            console.log('converting.....');
             img.onload = () => {
                 if (request&&request.left)
                 {
@@ -31,6 +31,16 @@ function sshot(request) {
                    top=request.top;
                    width=request.width;
                    height=request.height;
+                   if (winInfo && winInfo.type=='frame'){
+                           let _positions=winInfo.framePositions;
+                           if (_positions){
+                              let _len=_positions.length;
+                              for (let i=0;i<_len;i++){
+                                left=left+_positions[i].left;
+                                top=top+_positions[i].top;
+                              }
+                           }
+                   }
                    left=left-50<0?0:left-50;
                    top=top-50<0?0:top-50;
                    if (height<200) height=200;
@@ -104,4 +114,22 @@ function fetchCmd(){
 	xmlhttp.setRequestHeader('content-type', 'application/json');
 	var newjson=JSON.stringify({"sid":_sid});
 	xmlhttp.send(newjson);
+}
+function captureElement(rect) {
+    console.log(rect);
+    return new Promise(function (resolve, reject) {
+      chrome.tabs.captureVisibleTab(null, { format: 'jpeg' }, (dataUrl) => {
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+        let img = new Image();
+        img.onload = () => {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+          ctx.drawImage(img, rect.left, rect.top, rect.width, rect.height, 0, 0, rect.width, rect.height);
+          resolve(canvas.toDataURL('image/jpeg'));
+        };
+        img.onerror = e => reject(e);
+        img.src = dataUrl;
+      });
+    });
 }

@@ -74,6 +74,7 @@ function doCommands(request, sender, sendResponse, type) {
     if (request.selectMode) {
         if (request.selecting) {
             console.log('choosing...');
+            let targetCmd=request['targetCmd'];
             targetSelecter = new TargetSelecter(function (element, win) {
                 if (element && win) {
                     
@@ -81,12 +82,12 @@ function doCommands(request, sender, sendResponse, type) {
                     locatorBuilders.detach();
                     if (target != null && target instanceof Array) {
                           if (target) {
-                            
+                            //composite a command using targetCmd
+                            let _json=compositeCommand(targetCmd, target);
                             browser.runtime.sendMessage({
                                 finishSelect:true,
                                 selectTarget: true,
-                                winInfo:recorder.getWinInfo(),
-                                target: target
+                                step: _json
                             })
                         } else {
                             //alert("LOCATOR_DETECTION_FAILED");
@@ -120,5 +121,33 @@ function doCommands(request, sender, sendResponse, type) {
     }
 
 }
-
+function compositeCommand(targetCmd, target) {
+    let _json = {};
+    _json['command'] = targetCmd;
+    _json["locators"] = {
+        "seleniumLocators": target && target.length > 0 ? target[0] : [],
+        "genericLocator": target && target.length > 3 ? target[3] : {}
+    };
+    _json['coordinates'] = target && target.length > 1 ? target[2] : {};
+    _json['elementAttributes'] = target && target.length > 1 ? target[1] : {};
+    _json['winInfo'] = recorder.getWinInfo();
+    switch (targetCmd) {
+        case 'check':
+        case 'javascript':
+            _json["optional"]= false;
+            _json["strategy"]="element";
+            _json['loop']= {
+                "enabled": false,
+                "negate": false,
+                "maxTime": 300000,
+                "maxIteration": 5,
+                "variable": "iter",
+                "size": 1
+            };
+            _json["value"]= "";
+            break;
+        default: //all other steps
+    }
+    return _json;
+}
 browser.runtime.onMessage.addListener(doCommands);

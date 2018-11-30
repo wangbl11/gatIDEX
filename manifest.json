@@ -2,7 +2,7 @@
     "description": "Oracle Globalization Automation Technology - Recording IDE",
     "manifest_version": 2,
     "name": "GatIDEX",
-    "version": "1.0.9",
+    "version": "1.0.12",
     "homepage_url": "https://github.com/wangbl11/gatIDEX",
     "options_ui": {
         "page": "panel/options.html",

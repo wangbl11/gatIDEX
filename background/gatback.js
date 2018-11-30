@@ -105,21 +105,26 @@ function onMessageReceived(frame){
              switch (_command){
                 case "stopRecord":
                    isRecording = false;
-                   recordEngine();
+                   isSelecting=false;
+                   disableRecording(true);
                    break;
                 case "startRecord":
                    isRecording = true;
-                   recordEngine();
+                   isSelecting=false;
+                   enableRecording(true);
                    break;
                 case "startSelect":
-                   isRecording=false;
+                   //isRecording=false;
                    isSelecting=true;
-                   selectElement();
+                   disableRecording().then(enableSelect(_msg['targetCommand']));
                    break;
                 case "stopSelect":
-                   isRecording=false;
+                   //isRecording=false;
                    isSelecting=false;
-                   selectElement();
+                   if (isRecording)
+                     disableSelect().then(enableRecording());
+                   else
+                     disableSelect();
                    break;
                 default:
                    ;
@@ -127,81 +132,92 @@ function onMessageReceived(frame){
         }
     }
 }
-function selectElement(){
-    //how to get the contentWindowId, from extcommand?????
-
-    if (isSelecting){
-        //send select command to active content page script
+function enableRecording(sendCallback) {
+    return new Promise(function (resolve, reject) {
+        recorder.attach();
+        notificationCount = 0;
+        let _tabs = [];
+        //console.log(extCommand.getContentWindowId());
+        browser.tabs.query({ url: "<all_urls>" })
+            .then(function (tabs) {
+                for (let tab of tabs) {
+                    _tabs.push(
+                        browser.tabs.sendMessage(tab.id, { attachRecorder: true }).then(
+                            function (rst) {
+                                console.log(tab.id + ' attached...');
+                            }
+                        ));
+                }
+                Promise.all(_tabs).then(function (result) {
+                    console.log('fully finish attaching...');
+                    if (sendCallback)
+                        emitMessageToConsole('SYSTEM', { "command": "finishStart" });
+                    // else {
+                    //     if (nextAction == 'select') {
+                    //         selectElement(param0);
+                    //     }
+                    // }
+                    _tabs.length = 0;
+                });
+            });
+    });
+}
+function disableRecording(sendCallback) {
+    return new Promise(function (resolve, reject) {
+        recorder.detach();
+        //ensure all window(s)/frame(s) have detached.
+        browser.tabs.query({ url: "<all_urls>" })
+            .then(function (tabs) {
+                let _tabs = [];
+                for (let tab of tabs) {
+                    _tabs.push(browser.tabs.sendMessage(tab.id, { detachRecorder: true })
+                        .then(function (rst) {
+                            console.log(tab.id + ' detached...');
+                        }
+                        ));
+                }
+                Promise.all(_tabs).then(function (result) {
+                    console.log('fully finish...');
+                    if (sendCallback)
+                        emitMessageToConsole('SYSTEM', { "command": "finishStop" });
+                    _tabs.length = 0;
+                });
+            });
+    });
+}
+function enableSelect(targetCmd) {
+    return new Promise(function (resolve, reject) {
         browser.tabs.query({
-          active: true,
-          currentWindow: true
-        }).then(function(tabs) {
-          if (tabs.length === 0) {
-            console.log("No match tabs");
-            isSelecting = false;
-          } else
-            browser.tabs.sendMessage(tabs[0].id, {selectMode: true, selecting: true});
-       });
-    }
-    else{
+            active: true,
+            currentWindow: true
+        }).then(function (tabs) {
+            if (tabs.length === 0) {
+                console.log("No match tabs");
+                isSelecting = false;
+            } else
+                browser.tabs.sendMessage(tabs[0].id,
+                    {
+                        "selectMode": true,
+                        "selecting": true,
+                        "targetCmd": targetCmd
+                    });
+        });
+    });
+}
+function disableSelect() {
+    return new Promise(function (resolve, reject) {
         //send unselect command to active content page script
         browser.tabs.query({
             active: true,
             currentWindow: true
-        }).then(function(tabs) {
-            browser.tabs.sendMessage(tabs[0].id, {selectMode: true, selecting: false});
-        }).catch(function(reason) {
+        }).then(function (tabs) {
+            browser.tabs.sendMessage(tabs[0].id, { selectMode: true, selecting: false });
+        }).catch(function (reason) {
             console.log(reason);
-        })
-    }
-    
-}
-function recordEngine(){
-    let _tabs=[];
-    if (isRecording) {
-        recorder.attach();
-        notificationCount = 0;
-        let _tabs=[];
-        console.log(extCommand.getContentWindowId());
-        browser.tabs.query({url: "<all_urls>"})
-        .then(function(tabs) {
-            for(let tab of tabs) {
-                _tabs.push(
-                browser.tabs.sendMessage(tab.id, {attachRecorder: true}).then(
-                    function(rst){
-                        console.log(tab.id+' attached...');
-                    }
-                ));
-            }
-            Promise.all(_tabs).then(function (result) {
-                console.log('fully finish attaching...');
-                emitMessageToConsole('SYSTEM',{"command":"finishStart"});
-                _tabs.length=0;
-            });     
         });
-       
-    }
-    else {
-        recorder.detach();
-        //ensure all window(s)/frame(s) have detached.
-        browser.tabs.query({url: "<all_urls>"})
-        .then(function(tabs) {
-            let _tabs=[];
-            for(let tab of tabs) {
-                _tabs.push(browser.tabs.sendMessage(tab.id, {detachRecorder: true})
-                .then(function(rst){
-                    console.log(tab.id+' detached...');
-                }
-                ));
-            }
-            Promise.all(_tabs).then(function (result) {
-                console.log('fully finish...');
-                emitMessageToConsole('SYSTEM',{"command":"finishStop"});
-                _tabs.length=0;
-            });            
-        });
-    }
+    });
 }
+
 function ignoreLastStep(_last,_json){
     let _ignore=false;
     return _ignore;
@@ -211,24 +227,24 @@ function emitMessageToConsole(_type,_json){
     let _send=false;
     if (_type=='SYSTEM') _send=true;
     else
-        if (isRecording) _send=true;
-        else if (steps.length==0) _send=true;
+        if (_type=='SELECT') _send=true;
+        else
+          if (isRecording) _send=true;
+          else if (steps.length==0) _send=true;
 
-    if (!_send) return;
+    if (!_send||!stompClient) return;
+
+    stepsCount++;
+    
     if (_json['optional']==undefined)
       _json['optional']=false;
     
-    // if (sentMessagesCnt==0){
-    //     stompClient.send(chatRoomId,
-    //         {},
-    //         JSON.stringify({ sender: 'ide', type: _type, content: steps[0] })
-    //     );
-    //     sentMessagesCnt++;
-    // }
     stompClient.send(chatRoomId,
                 {},
                 JSON.stringify({ sender: 'ide', type: _type, content: _json })
     );
+
+    steps.push(_json);
 }
 
 /*Read data from storage */
@@ -399,20 +415,26 @@ function addCommand(msg, auto, insertCommand) {
     if (valueCommands.indexOf(command_name) >= 0) {
       _json['value'] = command_value;
     }
+    
   }
   //composite display name
   compositeDisplayName(_json);
 
-  //capture screenshot
-    sshot(_json["coordinates"]).then(function (d) {
-        _json['img'] = d; 
-        if (stompClient){
-            stepsCount++;
+    //capture screenshot
+  sshot(_json["coordinates"],_json['winInfo']).then(function (d) {
+        _json['img'] = d;
+        if (_json["locators"] && _json["locators"]["genericLocator"]) {
+            captureElement(_json["coordinates"]).then(function (d) {
+                _json["locators"]["genericLocator"]["image"] = d;
+                emitMessageToConsole('STEP',_json);
+            },function(d){console.log(d);});
+        }else{
             emitMessageToConsole('STEP',_json);
         }
-        steps.push(_json);
-        setStorage(1, steps); 
-    });
+
+  },function(d){
+      console.log(d);
+  });
 }
 
 // add command automatically (before last command upward)
@@ -442,23 +464,24 @@ function fromContentScript(message, sender, sendResponse) {
     }else if (message.finishSelect){//finish select
         if (isSelecting){
             isSelecting=false;
-            selectElement();
+            if (isRecording)
+              disableSelect().then(enableRecording());
+            else
+              disableSelect();
             if (message.selectTarget){
-                let _json={
-                    "found":true,
-                    "command":"finishSelect"
-                };
-                 _json["locators"]= {
-                        "seleniumLocators":message.target && message.target.length > 0 ? message.target[0] : [],
-                        "genericLocator":message.target && message.target.length > 3 ? message.target[3] : {}
-                };
-                _json['coordinates']=message.target && message.target.length > 1 ? message.target[2] : {};
-                _json['elementAttributes']=message.target && message.target.length > 1 ? message.target[1] : {};
-                _json['winInfo']=message.winInfo;
-                sshot(_json["coordinates"]).then(function (d) {
-                    _json['img'] = d; 
-                    if (stompClient){
-                        emitMessageToConsole('SYSTEM',_json);
+                let _json=message['step'];
+                console.log(JSON.stringify(_json["coordinates"]));
+                 
+                sshot(_json["coordinates"],_json["winInfo"]).then(function (d) {
+                    _json['img'] = d;
+                    if (_json["locators"]["genericLocator"]) {
+                        captureElement(_json["coordinates"]).then(function (d) {
+                            _json["locators"]["genericLocator"]["image"] = d;
+                            emitMessageToConsole('SELECT',_json);
+                        });
+                    }
+                    else{
+                        emitMessageToConsole('SELECT',_json);
                     }
                 });
             }
@@ -468,7 +491,10 @@ function fromContentScript(message, sender, sendResponse) {
         }
     }else if (message.cancelSelectTarget){
         isSelecting=false;
-        selectElement();
+        if (isRecording)
+              disableSelect().then(enableRecording());
+        else
+              disableSelect();
     }
     else
     {
@@ -483,41 +509,6 @@ function fromContentScript(message, sender, sendResponse) {
     }
 }
 
-// showElementButton.addEventListener("click", function(){
-//     try{
-//         var targetValue = document.getElementById("command-target").value;
-//         if (targetValue == "auto-located-by-tac") {
-//             targetValue = document.getElementById("command-target-list").options[0].text;
-//         }
-//         browser.tabs.query({
-//             active: true,
-//             windowId: contentWindowId
-//         }).then(function(tabs) {
-//             if (tabs.length === 0) {
-//                 console.log("No match tabs");
-//             } else {
-//                 browser.webNavigation.getAllFrames({tabId: tabs[0].id})
-//                     .then(function(framesInfo){
-//                         var frameIds = [];
-//                         for (let i = 0; i < framesInfo.length; i++) {
-//                             frameIds.push(framesInfo[i].frameId)
-//                         }
-//                         frameIds.sort();
-//                         var infos = {
-//                             "index": 0,
-//                             "tabId": tabs[0].id,
-//                             "frameIds": frameIds,
-//                             "targetValue": targetValue
-//                         };
-//                         sendShowElementMessage(infos);
-//                     });
-//             }
-//         });
-//     } catch (e) {
-//         console.error(e);
-//     }
-// });
-
 browser.runtime.onMessage.addListener(fromContentScript);
 
 //initialize background recorder
@@ -527,4 +518,3 @@ var recorder = new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 //recorder.attach();
 
-//loop all existing tab to send attachRecorder info

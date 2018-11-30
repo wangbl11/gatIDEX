@@ -247,13 +247,19 @@ LocatorBuilders.prototype.buildAll = function(el) {
         locators.push([]);
         console.log(err.message);
       }
-      try{
+  }
+//   else{
+//     locators.push([]);
+//   }
+  try{
         let _coords = this.getNodeCoords(e);
         locators.push(_coords);
       }catch(err){
-        locators.push([]);
+        locators.push({});
         console.log(err.message);
-      }
+  }
+  if (e.nodeName&&e.nodeName.toLowerCase().indexOf('frame')<0)
+  {    
       try{
           let genericLocator = new GenericLocators().gl_genGenericLocator(e);
           locators.push(genericLocator);
@@ -314,47 +320,47 @@ LocatorBuilders.prototype.getNodeCoords = function(node, bAdjusted, bNodeContent
       }
     }
   } catch (e) {
-
+     console.log(e.message);
   }
   return coords;
 }
 
-LocatorBuilders.prototype.buildForFrame = function(el) {
-  var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
-  var xpathLevel = 0;
-  var maxLevel = 10;
-  var locator;
-  var locators = [];
-  var _main = [];
-  var _coords = this.getNodeCoords(e);
+// LocatorBuilders.prototype.buildForFrame = function(el) {
+//   var e = core.firefox.unwrap(el); //Samit: Fix: Do the magic to get it to work in Firefox 4
+//   var xpathLevel = 0;
+//   var maxLevel = 10;
+//   var locator;
+//   var locators = [];
+//   var _main = [];
+//   var _coords = this.getNodeCoords(e);
 
-  var _seq = 0;
-  for (var i = 0; i < LocatorBuilders.order1.length; i++) {
-    var finderName = LocatorBuilders.order1[i];
-    //console.log(finderName);
-    try {
-      locator = this.buildForWhat(1,finderName, e);
-      if (locator) {
-        locator = String(locator);
+//   var _seq = 0;
+//   for (var i = 0; i < LocatorBuilders.order1.length; i++) {
+//     var finderName = LocatorBuilders.order1[i];
+//     //console.log(finderName);
+//     try {
+//       locator = this.buildForWhat(1,finderName, e);
+//       if (locator) {
+//         locator = String(locator);
 
-        //locators.splice(0, 0, [locator, finderName]);
-        _main.splice(0, 0, {
-          "finder": finderName,
-          "values": [locator]
-        });
-      }
-    } catch (ex) {
-      // TODO ignore the buggy locator builder for now
-      //this.log.debug("locator exception: " + e);
-      console.log("error in buildFrame: "+ex.message)
-    }
-  }
-  let _json = this.computeElementAttrs(e,el);
-  locators.push(_main);
-  locators.push(_json);
-  locators.push(_coords);
-  return locators;
-};
+//         //locators.splice(0, 0, [locator, finderName]);
+//         _main.splice(0, 0, {
+//           "finder": finderName,
+//           "values": [locator]
+//         });
+//       }
+//     } catch (ex) {
+//       // TODO ignore the buggy locator builder for now
+//       //this.log.debug("locator exception: " + e);
+//       console.log("error in buildFrame: "+ex.message)
+//     }
+//   }
+//   let _json = this.computeElementAttrs(e,el);
+//   locators.push(_main);
+//   locators.push(_json);
+//   locators.push(_coords);
+//   return locators;
+// };
 
 LocatorBuilders.prototype.findElement = function(locator) {
   try {
@@ -582,7 +588,7 @@ LocatorBuilders.prototype.getCSSSubPath = function(e) {
 
 LocatorBuilders.prototype.preciseXPath = function(xpath, e) {
   //only create more precise xpath if needed
-  console.log(xpath);
+  //console.log(xpath);
   if (this.findElement(xpath) != e) {
     var result = e.ownerDocument.evaluate(xpath, e.ownerDocument, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     //skip first element (result:0 xpath index:1)
