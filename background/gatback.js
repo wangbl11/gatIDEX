@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  */
+var gat_socket_server=null; //'http://slc00blb.us.oracle.com:8080/ws';
 var extCommand = new ExtCommand();
 var sentMessagesCnt=0;
 var elementAttributesTemplate={
@@ -50,14 +51,19 @@ function getRecordsArray() {
   return recordingArray;
 }
 ///////////////////////////////////////////////////////////////////////////////////
-var socket = new SockJS('http://slc00blb.us.oracle.com:8080/ws');
-var stompClient = Stomp.over(socket);
-stompClient.debug = () => {};
+console.log('~~~~~~~~~~~~~~~~~~~~~~~');
+var socket = null; //new SockJS(gat_socket_server);
+var stompClient = null;//Stomp.over(socket);
+getStorage();
+//stompClient.debug = () => {};
 var uuid = UUID.generate();
 var connected=false;
 var chatRoomId='/app/chat.privateMsg.';
 var reconInt;
 function connectSocketServer() {
+    socket = new SockJS(gat_socket_server);
+    stompClient = Stomp.over(socket);
+    stompClient.debug = () => {};
     stompClient.connect({ "id": uuid }, onConnected, onError);
 }
 function onConnected(frame) {
@@ -122,9 +128,9 @@ function onMessageReceived(frame){
                    //isRecording=false;
                    isSelecting=false;
                    if (isRecording)
-                     disableSelect().then(enableRecording());
+                     disableSelect().then(enableRecording()).then(emitMessageToConsole('SYSTEM',{"command":"finishCancelSelect"}));
                    else
-                     disableSelect();
+                     disableSelect().then(emitMessageToConsole('SYSTEM',{"command":"finishCancelSelect"}));
                    break;
                 default:
                    ;
@@ -245,6 +251,7 @@ function emitMessageToConsole(_type,_json){
     );
 
     steps.push(_json);
+    setStorage(1, steps);
 }
 
 /*Read data from storage */
@@ -255,8 +262,11 @@ function getStorage() {
     gat_runner_url = results["gat.runner.url"];
     gat_runner_datafile = results["gat.runner.datafile"];
     gat_recorder_uuid = results["gat.recorder.topicid"];
+    gat_socket_server = results["gat.recorder.wsServerURL"];
     if (!gat_recorder_uuid)
-      gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c'
+      gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
+    if (!gat_socket_server)
+      gat_socket_server='http://slc00blb.us.oracle.com:8080/ws';
     connectSocketServer();
   }, function (message){
     console.log('get wrong with local');
@@ -463,11 +473,13 @@ function fromContentScript(message, sender, sendResponse) {
 
     }else if (message.finishSelect){//finish select
         if (isSelecting){
-            isSelecting=false;
-            if (isRecording)
-              disableSelect().then(enableRecording());
-            else
-              disableSelect();
+
+            // isSelecting=false;
+            // if (isRecording)
+            //   disableSelect().then(enableRecording());
+            // else
+            //   disableSelect();
+            
             if (message.selectTarget){
                 let _json=message['step'];
                 console.log(JSON.stringify(_json["coordinates"]));
@@ -512,8 +524,7 @@ function fromContentScript(message, sender, sendResponse) {
 browser.runtime.onMessage.addListener(fromContentScript);
 
 //initialize background recorder
-console.log('~~~~~~~~~~~~~~~~~~~~~~~');
-getStorage();
+
 var recorder = new BackgroundRecorder();
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
 //recorder.attach();

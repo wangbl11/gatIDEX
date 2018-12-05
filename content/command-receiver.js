@@ -79,7 +79,7 @@ function doCommands(request, sender, sendResponse, type) {
                 if (element && win) {
                     
                     var target = locatorBuilders.buildAll(element);
-                    locatorBuilders.detach();
+                    //locatorBuilders.detach();
                     if (target != null && target instanceof Array) {
                           if (target) {
                             //composite a command using targetCmd
@@ -95,15 +95,12 @@ function doCommands(request, sender, sendResponse, type) {
                     }
 
                 }
-                targetSelecter = null;
-            }, function () {
-                browser.runtime.sendMessage({
-                    cancelSelectTarget: true
-                })
+                //targetSelecter = null;
             });
 
         } else {
             if (targetSelecter) {
+                locatorBuilders.detach();
                 targetSelecter.cleanup();
                 targetSelecter = null;
                 return;

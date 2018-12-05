@@ -66,3 +66,14 @@ function grab(window) {
     }
     return canvas.toDataURL();
   }
+function offsetXY(event) {
+    var top = event.pageY,
+        left = event.pageX;
+    var element = event.target;
+    do {
+        top -= element.offsetTop;
+        left -= element.offsetLeft;
+        element = element.offsetParent;
+    } while (element);
+    return left+','+top;
+}

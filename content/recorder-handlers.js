@@ -114,22 +114,30 @@ Recorder.addEventHandler('type2', 'keyup', function(event) {
 var preventClickTwice = false;
 // event.isTrusted - whether it's user click or application logic click
 Recorder.addEventHandler('clickAt', 'click', function(event) {
-    //console.log('click');
+    console.log('click~~~~~~~~~~~');
     if (event.button == 0 && !preventClick && canTrusted(event)) {
         var _target=event.target;
         var tagName=_target.tagName.toLowerCase();
         if (tagName=='div'&&_target.scrollWidth>_target.clientWidth) return;
 
         if (!preventClickTwice) {
+
+            var clickable = this.findClickableElement(_target);
+            if (!clickable){ 
+                this.clickLocator=true;
+                return;
+            }
             var top = event.pageY,
                 left = event.pageX;
-            var element = event.target;
+            var element = _target;
             do {
                 top -= element.offsetTop;
                 left -= element.offsetLeft;
                 element = element.offsetParent;
             } while (element);
             //var target = event.target;
+            console.log('click at~~~~~~~~~~~');
+            this.clickLocator=true;
             this.record("clickAt", this.locatorBuilders.buildAll(_target), left + ',' + top,'click');
             //var arrayTest = this.locatorBuilders.buildAll(_target);
             preventClickTwice = true;
@@ -296,6 +304,7 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
 
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
+    console.log('mousedown');
     var self = this;
     if (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) {
         this.mousedown = event;
@@ -327,6 +336,10 @@ Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
     clearTimeout(this.selectMouseup);
+
+    // let clickable = this.findClickableElement(event.target);
+    // if (!clickable) return;
+
     if (this.selectMousedown) {
         var x = event.clientX - this.selectMousedown.clientX;
         var y = event.clientY - this.selectMousedown.clientY;
@@ -371,12 +384,19 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
             this.record("mouseDown", this.locatorBuilders.buildAll(this.mousedown.target), '');
             this.record("mouseUp", this.locatorBuilders.buildAll(event.target), '');
         } else if (this.mousedown && this.mousedown.target === event.target) {
+            /*
+               sometimes, click eventhandler cannot capture all click action,
+               so monitor mousedown/mouseup, if there is no click is captured in click eventhandler within 100 millisecond, 
+               it means the click is already captured, here does not need capture. 
+            */
             var self = this;
             var target = this.locatorBuilders.buildAll(this.mousedown.target);
-            // setTimeout(function() {
-            //     if (!self.clickLocator)
-            //         this.record("click", target, '');
-            // }.bind(this), 100);
+            var _off=offsetXY(event);
+            console.log('mouse-click...');
+            setTimeout(function() {
+                if (!self.clickLocator)
+                    self.record("clickAt", target, _off, 'click');
+            }.bind(this), 100);
         }
 
     }
@@ -660,13 +680,16 @@ Recorder.prototype.findClickableElement = function(e) {
 		(tagName == "input" &&
 		 (type == "submit" || type == "button" || type == "image" || type == "radio" || type == "checkbox" || type == "reset"))
      ||(e.hasAttribute('data-bind')&&e.getAttribute("data-bind").indexOf("click")>=0)) {
-		return e;
+        console.log('clickable');
+        return e;
     }
     //gat3895
     if (svgArray.includes(tagName)){
+        console.log('svg.....')
         return e;
     }
 
+    console.log('ojetlist...');
     if (e.parentNode != null) {
         var _isSelect=this.isOjectListExpand(e,tagName,e.parentNode);
         if (_isSelect) return e;

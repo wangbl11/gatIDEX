@@ -56,7 +56,7 @@ TargetSelecter.prototype.handleEvent = function (evt) {
             } //Right click would cancel the select
             evt.preventDefault();
             evt.stopPropagation();
-            this.cleanup();
+            //this.cleanup();
             break;
     }
 };
