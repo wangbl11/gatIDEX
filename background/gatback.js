@@ -61,10 +61,17 @@ var connected=false;
 var chatRoomId='/app/chat.privateMsg.';
 var reconInt;
 function connectSocketServer() {
-    socket = new SockJS(gat_socket_server);
-    stompClient = Stomp.over(socket);
+    if (gat_socket_server.startsWith('http'))
+    {
+        socket = new SockJS(gat_socket_server);
+        stompClient = Stomp.over(socket);
+    }else{
+        //socket=new WebSocket(gat_socket_server);
+        stompClient =Stomp.client(gat_socket_server);
+    }
     stompClient.debug = () => {};
     stompClient.connect({ "id": uuid }, onConnected, onError);
+    
 }
 function onConnected(frame) {
     console.log('connected');
@@ -72,11 +79,7 @@ function onConnected(frame) {
     stompClient.subscribe("/topic/" + gat_recorder_uuid, onMessageReceived);
     stompClient.subscribe("/user/exchange/amq.direct/chat.message", onMessageReceived);
     chatRoomId+=gat_recorder_uuid;
-    // var _content = { "chatRoomId": gat_recorder_uuid };
-    // stompClient.send('/app/chat.privateMsg.' + gat_recorder_uuid,
-    //     {},
-    //     JSON.stringify({ sender: 'ide', type: 'JOIN', content: JSON.stringify(_content) })
-    // );
+    
 }
 function onError(frame) {
     // console.log(frame);
@@ -251,7 +254,7 @@ function emitMessageToConsole(_type,_json){
     );
 
     steps.push(_json);
-    setStorage(1, steps);
+    //setStorage(1, steps);
 }
 
 /*Read data from storage */
@@ -266,7 +269,10 @@ function getStorage() {
     if (!gat_recorder_uuid)
       gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
     if (!gat_socket_server)
-      gat_socket_server='http://slc00blb.us.oracle.com:8080/ws';
+    {
+        gat_socket_server='http://slc00blb.us.oracle.com:8080/ws';
+        //gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
+    }
     connectSocketServer();
   }, function (message){
     console.log('get wrong with local');
