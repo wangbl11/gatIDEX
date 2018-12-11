@@ -689,6 +689,10 @@ Recorder.prototype.findClickableElement = function(e) {
         return e;
     }
 
+    //need upstream to its component level tag??
+    let _switch=e.closest(".oj-switch");
+    if (_switch) return e;
+
     console.log('ojetlist...');
     if (e.parentNode != null) {
         var _isSelect=this.isOjectListExpand(e,tagName,e.parentNode);

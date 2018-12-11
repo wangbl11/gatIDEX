@@ -50,7 +50,7 @@ GenericLocators.prototype.gl_genGenericLocator = function(element){
  */
 GenericLocators.prototype.gl_genObject = function(element){
   var elemObj = {
-    name: element.localName,
+    name: this.gl_getNodeName(element),
     types: [],
     texts: [],
     pathToAncestor: ''
@@ -116,8 +116,8 @@ GenericLocators.prototype.gl_genAncestorObjects = function(current, ancestor, ge
     acceptNode: function(node){
       if(node == current)
         return 2;
-      if(node.nodeType==1 && window.getComputedStyle(node).getPropertyValue('display')=='none')
-        return 2;
+      //if(node.nodeType==1 && window.getComputedStyle(node).getPropertyValue('display')=='none')
+      //  return 2;
       if(node.nodeType==1 && node.hasAttribute('accesskey'))
         return 2;
       if(node.nodeType==3 && !(/^\s*$/.test(node.data)))
@@ -144,7 +144,7 @@ GenericLocators.prototype.gl_genAncestorObjects = function(current, ancestor, ge
       var latestIndex = genericLocator['gatfind_elements'].length-1;
       genericLocator['gatfind_elements'][latestIndex]['pathToAncestor'] = this.gl_getPathToAncestor(current, ancestor);
       genericLocator['gatfind_elements'].push({
-        name: ancestor.localName,
+        name: this.gl_getNodeName(ancestor),
         types: ['textContent'],
         texts: [textkey.value],
         pathToAncestor: ''
@@ -194,10 +194,26 @@ GenericLocators.prototype.gl_getPathToAncestor = function(current, ancestor){
   var tagList = [];
   var node = current.parentNode;
   while(node && node!=ancestor){
-    tagList.push(node.localName);
+    tagList.push(this.gl_getNodeName(node));
     node = node.parentNode;
   }
   return tagList.length==0 ? '/' : '/'+tagList.reverse().join('/')+'/';
+};
+GenericLocators.prototype.gl_getNodeName = function(current) {
+  return current.localName+this.gl_getNodeNbr(current);
+}
+GenericLocators.prototype.gl_getNodeNbr = function(current) {
+  var total = 0;
+  var index = 0;
+  var children = current.parentNode.children;
+  for (var i=0; i<children.length; i++) {
+    if (children[i].nodeName==current.nodeName) {
+      total++;
+      if (children[i]==current)
+        index = total;
+    }
+  }
+  return total>1 ? '[' + index + ']' : '';
 };
 /**
  * Grab canvas to PNG image for current found element

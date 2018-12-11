@@ -25,6 +25,7 @@ if (window === window.top) {
         if (event.source.top == window && event.data &&
             event.data.direction == "from-page-script") {
             if (event.data.recordedType) {
+                /* // disable assertXXX commands temporarily
                 switch (event.data.recordedType) {
                     case "prompt":
                         if (event.data.recordedResult != null) {
@@ -43,10 +44,10 @@ if (window === window.top) {
                         recorder.record("assertConfirmation", [[event.data.recordedMessage]], "", false, event.data.frameLocation);
                         break;
                     case "alert":
-                        //record("answerOnNextAlert",[[event.data.recordedResult]],"",true);
                         recorder.record("assertAlert", [[event.data.recordedMessage]], "", false, event.data.frameLocation);
                         break;
                 }
+                */
             }
             if (event.data.response) {
                 switch (event.data.response) {

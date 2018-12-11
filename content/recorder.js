@@ -200,6 +200,7 @@ class Recorder {
   }
   record(command, target, value,evtType, insertBeforeLastCommand, actualFrameLocation) {
     let self = this;
+    console.log(command);
     var _json={
       command: command,
       target: target,
@@ -215,6 +216,7 @@ class Recorder {
     if (this.window != this.window.top){
         _json['winInfo']['frameLocators']=this.locators?this.locators:[];
     }
+    
     browser.runtime.sendMessage(_json).catch(function(reason) {
         // If receiving end does not exist, detach the recorder
         self.detach();

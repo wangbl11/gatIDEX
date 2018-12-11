@@ -267,12 +267,19 @@ function getStorage() {
     gat_recorder_uuid = results["gat.recorder.topicid"];
     gat_socket_server = results["gat.recorder.wsServerURL"];
     if (!gat_recorder_uuid)
-      gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
+    {
+        console.log('gat.recorder.wsServerURL');
+        gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
+    }
     if (!gat_socket_server)
     {
         gat_socket_server='http://slc00blb.us.oracle.com:8080/ws';
+        console.log('not specify gat_socket_server');
         //gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
     }
+
+    console.log(gat_socket_server);
+    console.log(gat_recorder_uuid);
     connectSocketServer();
   }, function (message){
     console.log('get wrong with local');
@@ -436,6 +443,9 @@ function addCommand(msg, auto, insertCommand) {
   //composite display name
   compositeDisplayName(_json);
 
+  if (_json['command']=='type'){
+    _json["strategy"]="textValue";
+  }
     //capture screenshot
   sshot(_json["coordinates"],_json['winInfo']).then(function (d) {
         _json['img'] = d;
@@ -488,8 +498,8 @@ function fromContentScript(message, sender, sendResponse) {
             
             if (message.selectTarget){
                 let _json=message['step'];
-                console.log(JSON.stringify(_json["coordinates"]));
-                 
+                //console.log(JSON.stringify(_json["coordinates"]));
+                compositeDisplayName(_json);
                 sshot(_json["coordinates"],_json["winInfo"]).then(function (d) {
                     _json['img'] = d;
                     if (_json["locators"]["genericLocator"]) {

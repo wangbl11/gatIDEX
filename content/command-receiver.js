@@ -133,15 +133,18 @@ function compositeCommand(targetCmd, target) {
         case 'javascript':
             _json["optional"]= false;
             _json["strategy"]="element";
+            _json["size"]= 1;
             _json['loop']= {
                 "enabled": false,
                 "negate": false,
                 "maxTime": 300000,
                 "maxIteration": 5,
-                "variable": "iter",
-                "size": 1
+                "variable": "iter"
             };
             _json["value"]= "";
+            break;
+        case 'type':
+            _json["strategy"]="textValue";
             break;
         default: //all other steps
     }
