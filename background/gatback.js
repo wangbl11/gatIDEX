@@ -248,6 +248,11 @@ function emitMessageToConsole(_type,_json){
     if (_json['optional']==undefined)
       _json['optional']=false;
     
+    if (_json['coordinates']){
+      delete _json['coordinates'].left1;
+      delete _json['coordinates'].top1;
+    }
+    
     stompClient.send(chatRoomId,
                 {},
                 JSON.stringify({ sender: 'ide', type: _type, content: _json })

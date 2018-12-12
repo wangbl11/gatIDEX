@@ -27,8 +27,9 @@ function sshot(request,winInfo) {
             img.onload = () => {
                 if (request&&request.left)
                 {
-                   left=request.left;
-                   top=request.top;
+                   left=request.left1;
+                   top=request.top1;
+                   console.log(left+","+top+","+request.left+","+request.top);
                    width=request.width;
                    height=request.height;
                    if (winInfo && winInfo.type=='frame'){
@@ -47,7 +48,7 @@ function sshot(request,winInfo) {
                    if (width<280) width=280;
                    canvas.width = 280;
                    canvas.height = 200;
-                   //console.log(left+","+top+","+width+","+height);
+                   
                 }
                 
                 if (_section) {
@@ -125,7 +126,7 @@ function captureElement(rect) {
         img.onload = () => {
           canvas.width = rect.width;
           canvas.height = rect.height;
-          ctx.drawImage(img, rect.left, rect.top, rect.width, rect.height, 0, 0, rect.width, rect.height);
+          ctx.drawImage(img, rect.left1?rect.left1:rect.left, rect.top1?rect.top1:rect.top, rect.width, rect.height, 0, 0, rect.width, rect.height);
           resolve(canvas.toDataURL('image/jpeg'));
         };
         img.onerror = e => reject(e);

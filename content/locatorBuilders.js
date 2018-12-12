@@ -306,8 +306,8 @@ LocatorBuilders.prototype.getNodeCoords = function(node, bAdjusted, bNodeContent
         var rect = range.getBoundingClientRect();
         if (rect) {
           if (bAdjusted) {
-            coords.left = Math.round(rect.left);
-            coords.top = Math.round(rect.top);
+            coords.left1=coords.left = Math.round(rect.left);
+            coords.top1 =coords.top = Math.round(rect.top);
             coords.width = Math.abs(Math.round(rect.right)-coords.left);
             coords.height = Math.abs(Math.round(rect.bottom)-coords.top);
           } else {
@@ -315,6 +315,8 @@ LocatorBuilders.prototype.getNodeCoords = function(node, bAdjusted, bNodeContent
             coords.top = Math.round(rect.top + j);
             coords.width = Math.abs(Math.round(rect.right + k)-coords.left);
             coords.height = Math.abs(Math.round(rect.bottom + j)-coords.top);
+            coords.left1=Math.round(rect.left);
+            coords.top1 = Math.round(rect.top );
           }
         }
       }
