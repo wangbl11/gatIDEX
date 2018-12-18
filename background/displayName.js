@@ -1,18 +1,19 @@
 function compositeDisplayName(json){
     let command=json["command"];
+    let parm=json['parameters'];
     switch (command){
         case "open":
-          json["display"]=`${json.command} ${json.url}`;
+          json["display"]=`${json.command} ${parm.url}`;
           //console.log(json['display']);
           break;
         case "type":
-          json["display"]=`${json.command} text '${json.value}' on the element field`;
+          json["display"]=`${json.command} text '${parm.value}' on the element field`;
           break;
         case "clickAt":
           json["display"]=`${json.command} element`;
           break;
         case "select":
-          json["display"]=`${json.command} '${json.value}'`;
+          json["display"]=`${json.command} '${parm.value}'`;
           break;
         case "check":
           json["display"]=`${json.command} element `;

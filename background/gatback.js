@@ -15,40 +15,40 @@
  *  limitations under the License.
  *
  */
-var gat_socket_server=null; //'http://slc00blb.us.oracle.com:8080/ws';
+var gat_socket_server = null; //'http://slc00blb.us.oracle.com:8080/ws';
 var extCommand = new ExtCommand();
-var sentMessagesCnt=0;
-var elementAttributesTemplate={
+var sentMessagesCnt = 0;
+var elementAttributesTemplate = {
 
 };
 var recordingWindows = [];
 var recordingArray = [];
-var stepsCount=0;
+var stepsCount = 0;
 var steps = [];
 var gat_recorder_uuid;
 var stompClient;
 var isRecording = false;
-var isPlaying=false;
-var isSelecting=false;
+var isPlaying = false;
+var isSelecting = false;
 
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
-  var _json = {
-    "id": "111",
-    "name": "NewScript"
-  }
-  return _json;
+    var _json = {
+        "id": "111",
+        "name": "NewScript"
+    }
+    return _json;
 }
 
 function getSelectedSuite() {
-  var _json = {
+    var _json = {
 
-  }
-  return _json;
+    }
+    return _json;
 }
 
 function getRecordsArray() {
-  return recordingArray;
+    return recordingArray;
 }
 ///////////////////////////////////////////////////////////////////////////////////
 console.log('~~~~~~~~~~~~~~~~~~~~~~~');
@@ -57,29 +57,28 @@ var stompClient = null;//Stomp.over(socket);
 getStorage();
 //stompClient.debug = () => {};
 var uuid = UUID.generate();
-var connected=false;
-var chatRoomId='/app/chat.privateMsg.';
+var connected = false;
+var chatRoomId = '/app/chat.privateMsg.';
 var reconInt;
 function connectSocketServer() {
-    if (gat_socket_server.startsWith('http'))
-    {
+    if (gat_socket_server.startsWith('http')) {
         socket = new SockJS(gat_socket_server);
         stompClient = Stomp.over(socket);
-    }else{
+    } else {
         //socket=new WebSocket(gat_socket_server);
-        stompClient =Stomp.client(gat_socket_server);
+        stompClient = Stomp.client(gat_socket_server);
     }
-    stompClient.debug = () => {};
+    stompClient.debug = () => { };
     stompClient.connect({ "id": uuid }, onConnected, onError);
-    
+
 }
 function onConnected(frame) {
     console.log('connected');
     clearInterval(reconInt);
     stompClient.subscribe("/topic/" + gat_recorder_uuid, onMessageReceived);
     stompClient.subscribe("/user/exchange/amq.direct/chat.message", onMessageReceived);
-    chatRoomId+=gat_recorder_uuid;
-    
+    chatRoomId += gat_recorder_uuid;
+
 }
 function onError(frame) {
     // console.log(frame);
@@ -96,48 +95,46 @@ function onError(frame) {
         connectSocketServer();
     }, 5000);
 }
-function onMessageReceived1(frame){
+function onMessageReceived1(frame) {
     console.log("from /topic/" + gat_recorder_uuid);
 }
-function onMessageReceived(frame){
+function onMessageReceived(frame) {
     console.log('~~~~~~~~~ received message');
-    let _body=frame.body;
-    let _json=JSON.parse(_body);
-    let _msg=_json['message'];
+    let _body = frame.body;
+    let _json = JSON.parse(_body);
+    let _msg = _json['message'];
     console.log(_msg);
-    if (_msg)
-    {
-        _msg=JSON.parse(_msg);
-        let _command=_msg['command'];
-        if (_command)
-        {
-             switch (_command){
+    if (_msg) {
+        _msg = JSON.parse(_msg);
+        let _command = _msg['command'];
+        if (_command) {
+            switch (_command) {
                 case "stopRecord":
-                   isRecording = false;
-                   isSelecting=false;
-                   disableRecording(true);
-                   break;
+                    isRecording = false;
+                    isSelecting = false;
+                    disableRecording(true);
+                    break;
                 case "startRecord":
-                   isRecording = true;
-                   isSelecting=false;
-                   enableRecording(true);
-                   break;
+                    isRecording = true;
+                    isSelecting = false;
+                    enableRecording(true);
+                    break;
                 case "startSelect":
-                   //isRecording=false;
-                   isSelecting=true;
-                   disableRecording().then(enableSelect(_msg['targetCommand']));
-                   break;
+                    //isRecording=false;
+                    isSelecting = true;
+                    disableRecording().then(enableSelect(_msg['targetCommand']));
+                    break;
                 case "stopSelect":
-                   //isRecording=false;
-                   isSelecting=false;
-                   if (isRecording)
-                     disableSelect().then(enableRecording()).then(emitMessageToConsole('SYSTEM',{"command":"finishCancelSelect"}));
-                   else
-                     disableSelect().then(emitMessageToConsole('SYSTEM',{"command":"finishCancelSelect"}));
-                   break;
+                    //isRecording=false;
+                    isSelecting = false;
+                    if (isRecording)
+                        disableSelect().then(enableRecording()).then(emitMessageToConsole('SYSTEM', { "command": "finishCancelSelect" }));
+                    else
+                        disableSelect().then(emitMessageToConsole('SYSTEM', { "command": "finishCancelSelect" }));
+                    break;
                 default:
-                   ;
-             }
+                    ;
+            }
         }
     }
 }
@@ -227,35 +224,35 @@ function disableSelect() {
     });
 }
 
-function ignoreLastStep(_last,_json){
-    let _ignore=false;
+function ignoreLastStep(_last, _json) {
+    let _ignore = false;
     return _ignore;
 }
-function emitMessageToConsole(_type,_json){
+function emitMessageToConsole(_type, _json) {
     //if not in recording mode, ignore all messages
-    let _send=false;
-    if (_type=='SYSTEM') _send=true;
+    let _send = false;
+    if (_type == 'SYSTEM') _send = true;
     else
-        if (_type=='SELECT') _send=true;
+        if (_type == 'SELECT') _send = true;
         else
-          if (isRecording) _send=true;
-          else if (steps.length==0) _send=true;
+            if (isRecording) _send = true;
+            else if (steps.length == 0) _send = true;
 
-    if (!_send||!stompClient) return;
+    if (!_send || !stompClient) return;
 
     stepsCount++;
-    
-    if (_json['optional']==undefined)
-      _json['optional']=false;
-    
-    if (_json['coordinates']){
-      delete _json['coordinates'].left1;
-      delete _json['coordinates'].top1;
+
+    if (_json['optional'] == undefined)
+        _json['optional'] = false;
+
+    if (_json['coordinates']) {
+        delete _json['coordinates'].left1;
+        delete _json['coordinates'].top1;
     }
-    
+
     stompClient.send(chatRoomId,
-                {},
-                JSON.stringify({ sender: 'ide', type: _type, content: _json })
+        {},
+        JSON.stringify({ sender: 'ide', type: _type, content: _json })
     );
 
     steps.push(_json);
@@ -264,83 +261,91 @@ function emitMessageToConsole(_type,_json){
 
 /*Read data from storage */
 function getStorage() {
-  var gettingAllStorageItems = browser.storage.local.get();
-  gettingAllStorageItems.then((results) => {
-    gat_runner_vncport = results["gat.runner.vncport"];
-    gat_runner_url = results["gat.runner.url"];
-    gat_runner_datafile = results["gat.runner.datafile"];
-    gat_recorder_uuid = results["gat.recorder.topicid"];
-    gat_socket_server = results["gat.recorder.wsServerURL"];
-    if (!gat_recorder_uuid)
-    {
-        console.log('gat.recorder.wsServerURL');
-        gat_recorder_uuid ='c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
-    }
-    if (!gat_socket_server)
-    {
-        gat_socket_server='http://slc00blb.us.oracle.com:8080/ws';
-        console.log('not specify gat_socket_server');
-        //gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
-    }
+    var gettingAllStorageItems = browser.storage.local.get();
+    gettingAllStorageItems.then((results) => {
+        gat_runner_vncport = results["gat.runner.vncport"];
+        gat_runner_url = results["gat.runner.url"];
+        gat_runner_datafile = results["gat.runner.datafile"];
+        gat_recorder_uuid = results["gat.recorder.topicid"];
+        gat_socket_server = results["gat.recorder.wsServerURL"];
+        if (!gat_recorder_uuid) {
+            console.log('gat.recorder.wsServerURL');
+            gat_recorder_uuid = 'c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
+        }
+        if (!gat_socket_server) {
+            gat_socket_server = 'http://slc00blb.us.oracle.com:8080/ws';
+            console.log('not specify gat_socket_server');
+            //gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
+        }
 
-    console.log(gat_socket_server);
-    console.log(gat_recorder_uuid);
-    connectSocketServer();
-  }, function (message){
-    console.log('get wrong with local');
-    //default value or default dispose
-    gat_runner_datafile='test_temporary';
-  });
+        console.log(gat_socket_server);
+        console.log(gat_recorder_uuid);
+        connectSocketServer();
+    }, function (message) {
+        console.log('get wrong with local');
+        //default value or default dispose
+        gat_runner_datafile = 'test_temporary';
+    });
 };
 
 function setStorage(key, val) {
-  if (key == 1) //save steps
-    browser.storage.local.set({
-      "steps": val
-    });
-  else if (key == 2) { //save windows
-    browser.storage.local.set({
-      "windows": val
-    });
-  }
+    if (key == 1) //save steps
+        browser.storage.local.set({
+            "steps": val
+        });
+    else if (key == 2) { //save windows
+        browser.storage.local.set({
+            "windows": val
+        });
+    }
 }
 
-var valueCommands = ["type", "clickAt"];
+var valueCommands = ["type", "clickAt","check"];
 
 function addTopWindow(winInfo) {
     var oneself = -1;
     try {
-      //check whether duplicate
-      console.log(winInfo)
-  
-      for (var i = 0; i < recordingWindows.length; i++) {
-        let _one = recordingWindows[i];
-        if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-           if (_one['hostname']==winInfo['hostname']){
-                 oneself=i;
-                 break;
-           }
-        } 
-      }
-      if (oneself==-1){ //new window
-        recordingWindows.push(winInfo);
-        let _open={
-            "command":'open',
-            "target":[
-                [{ "finder": "url", "values": [winInfo['url']] }]
-                ],
-            "value":winInfo['url'],
+        //check whether duplicate
+        console.log(winInfo)
+
+        for (var i = 0; i < recordingWindows.length; i++) {
+            let _one = recordingWindows[i];
+            if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
+                if (_one['hostname'] == winInfo['hostname']) {
+                    oneself = i;
+                    break;
+                }
+            }
         }
-        addCommandAuto(_open);
-      }
-      oneself = recordingWindows.length - 1;
-      return oneself;
+        if (oneself == -1) { //new window
+            recordingWindows.push(winInfo);
+            let _open = {
+                "command": 'open',
+                "parameters": {                   
+                    "url": winInfo['url']
+                    // "parametrize":[
+                    //   {
+                    //     "enabled": true,
+                    //     "name": "urlParam",
+                    //     "ref": "url",
+                    //     "randomize": {
+                    //       "enabled": true,
+                    //       "type": "url"
+                    //      }
+                    //    }
+                    // ]
+                }
+            }
+            addCommandAuto(_open);
+        }
+        oneself = recordingWindows.length - 1;
+        return oneself;
     } catch (err) {
-      console.log(err.message);
+        console.log(err.message);
     }
     return -1;
 }
-
+/*
 function addWindow(winInfo) {
   var father=-1;
   var oneself = -1;
@@ -407,65 +412,75 @@ function addWindow(winInfo) {
   }
   return -1;
 }
-
+*/
 
 function addCommand(msg, auto, insertCommand) {
-  if (!isRecording&&steps.length>0) return;
-  // create default test suite and case if necessary
-  var s_suite = getSelectedSuite(),
-    s_case = getSelectedCase();
+    if (!isRecording && steps.length > 0) return;
+    // create default test suite and case if necessary
+    var s_suite = getSelectedSuite(),
+        s_case = getSelectedCase();
 
-  let command_name=msg['command'];
-  let command_target_array=msg['target'];
-  let command_value=msg['value'];
-  let _json;
-  if (command_name == 'open') {
-    _json = {
-      "command": command_name,
-      "url": command_value,
-      "parametrize": {
-        "urlParam": "url"
-      }
-    };
-  } else {
-    _json = {
-      "command": command_name,
-      "locators": {
-          "seleniumLocators":command_target_array && command_target_array.length > 0 ? command_target_array[0] : [],
-          "genericLocator":command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
-      },
-      "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
-      "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
-      "value": "",
-      "winInfo":msg['winInfo'],
-      "optional": false
+    let command_name = msg['command'];
+    let command_target_array = msg['target'];
+    let command_value = msg['value'];
+    let _json;
+    if (command_name == 'open') {
+        _json = {
+            "command": command_name,
+            "parameters": msg['parameters']
+        };
+    } else {
+        _json = {
+            "command": command_name,
+            "locators": {
+                "seleniumLocators": command_target_array && command_target_array.length > 0 ? command_target_array[0] : [],
+                "genericLocator": command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
+            },
+            "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
+            "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
+            "parameters":{},
+            "winInfo": msg['winInfo'],
+            "optional": false
+        }
+        if (valueCommands.indexOf(command_name) >= 0) {
+                _json["parameters"]['value'] = command_value;
+        }
     }
-    if (valueCommands.indexOf(command_name) >= 0) {
-      _json['value'] = command_value;
+    //composite display name
+    compositeDisplayName(_json);
+
+    if (_json['command'] == 'type') {
+        _json["parameters"]['strategy'] = "textValue";
+    }
+
+    if (_json['command'] == 'select') {
+        _json["parameters"]['strategy'] = "text";
     }
     
-  }
-  //composite display name
-  compositeDisplayName(_json);
+    if (_json['command'] == 'dragAndDrop') {
+        if (_json['evtType']=='html5'){
+            let parm=_json["parameters"];
+            parm["dragType"]="html5";
+            parm["targetLocators"]={};
+            parm["targetElementAttributes"]={};            
+        }
+    }
 
-  if (_json['command']=='type'){
-    _json["strategy"]="textValue";
-  }
     //capture screenshot
-  sshot(_json["coordinates"],_json['winInfo']).then(function (d) {
+    sshot(_json["coordinates"], _json['winInfo']).then(function (d) {
         _json['img'] = d;
         if (_json["locators"] && _json["locators"]["genericLocator"]) {
             captureElement(_json["coordinates"]).then(function (d) {
                 _json["locators"]["genericLocator"]["image"] = d;
-                emitMessageToConsole('STEP',_json);
-            },function(d){console.log(d);});
-        }else{
-            emitMessageToConsole('STEP',_json);
+                emitMessageToConsole('STEP', _json);
+            }, function (d) { console.log(d); });
+        } else {
+            emitMessageToConsole('STEP', _json);
         }
 
-  },function(d){
-      console.log(d);
-  });
+    }, function (d) {
+        console.log(d);
+    });
 }
 
 // add command automatically (before last command upward)
@@ -475,62 +490,61 @@ function addCommandBeforeLastCommand(msg) {
 
 // add command automatically (append upward)
 function addCommandAuto(msg) {
-  addCommand(msg, 1, false);
+    addCommand(msg, 1, false);
 }
 function fromContentScript(message, sender, sendResponse) {
     console.log('in background/gatback.js');
-    if (message['winInfo']){
-        message['winInfo']['tabId']=sender.tab.id;
-        message['winInfo']['windowId']=sender.tab.windowId;
+    if (message['winInfo']) {
+        message['winInfo']['tabId'] = sender.tab.id;
+        message['winInfo']['windowId'] = sender.tab.windowId;
     }
     if (message.attachRecorderRequest) {
         if (isRecording && !isPlaying) {
             console.log(sender.tab.id);
             browser.tabs.sendMessage(sender.tab.id, { attachRecorder: true });
         }
-        else{
+        else {
             console.log("not in recording mode");
         }
 
-    }else if (message.finishSelect){//finish select
-        if (isSelecting){
+    } else if (message.finishSelect) {//finish select
+        if (isSelecting) {
 
             // isSelecting=false;
             // if (isRecording)
             //   disableSelect().then(enableRecording());
             // else
             //   disableSelect();
-            
-            if (message.selectTarget){
-                let _json=message['step'];
+
+            if (message.selectTarget) {
+                let _json = message['step'];
                 //console.log(JSON.stringify(_json["coordinates"]));
                 compositeDisplayName(_json);
-                sshot(_json["coordinates"],_json["winInfo"]).then(function (d) {
+                sshot(_json["coordinates"], _json["winInfo"]).then(function (d) {
                     _json['img'] = d;
                     if (_json["locators"]["genericLocator"]) {
                         captureElement(_json["coordinates"]).then(function (d) {
                             _json["locators"]["genericLocator"]["image"] = d;
-                            emitMessageToConsole('SELECT',_json);
+                            emitMessageToConsole('SELECT', _json);
                         });
                     }
-                    else{
-                        emitMessageToConsole('SELECT',_json);
+                    else {
+                        emitMessageToConsole('SELECT', _json);
                     }
                 });
             }
-            else{
-                emitMessageToConsole('SYSTEM',{"command":"finishSelect","found":false});
+            else {
+                emitMessageToConsole('SYSTEM', { "command": "finishSelect", "found": false });
             }
         }
-    }else if (message.cancelSelectTarget){
-        isSelecting=false;
+    } else if (message.cancelSelectTarget) {
+        isSelecting = false;
         if (isRecording)
-              disableSelect().then(enableRecording());
+            disableSelect().then(enableRecording());
         else
-              disableSelect();
+            disableSelect();
     }
-    else
-    {
+    else {
         if (message.command && message.command == 'gatWindow' && stepsCount == 0) {
             message['command'] = 'open';
             message['tabId'] = sender.tab.id;

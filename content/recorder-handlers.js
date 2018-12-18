@@ -421,7 +421,7 @@ Recorder.addEventHandler('dragAndDropToObject', 'drop', function(event) {
     clearTimeout(this.dropLocator);
     if (this.dragstartLocator && event.button == 0 && this.dragstartLocator.target !== event.target) {
         //value no option
-        this.record("dragAndDropToObject", this.locatorBuilders.buildAll(this.dragstartLocator.target), this.locatorBuilders.build(event.target),'html5dragdrop');
+        this.record("dragAndDrop", this.locatorBuilders.buildAll(this.dragstartLocator.target), this.locatorBuilders.build(event.target),'html5dragdrop');
     }
     delete this.dragstartLocator;
     delete this.selectMousedown;
@@ -634,7 +634,8 @@ browser.runtime.sendMessage({
 Recorder.prototype.getOptionLocator = function(option) {
     var label = option.text.replace(/^ *(.*?) *$/, "$1");
     if (label.match(/\xA0/)) { // if the text contains &nbsp;
-        return "label=regexp:" + label.replace(/[\(\)\[\]\\\^\$\*\+\?\.\|\{\}]/g, function(str) {
+        //"label=regexp:" + 
+        return label.replace(/[\(\)\[\]\\\^\$\*\+\?\.\|\{\}]/g, function(str) {
                 return '\\' + str
             })
             .replace(/\s+/g, function(str) {
@@ -649,7 +650,8 @@ Recorder.prototype.getOptionLocator = function(option) {
                 }
             });
     } else {
-        return "label=" + label;
+        //"label=" +
+        return  label;
     }
 };
 
@@ -742,7 +744,7 @@ Recorder.addEventHandler('select', 'change', function(event) {
     if (event.target.tagName) {
         var tagName = event.target.tagName.toLowerCase();
         if ('select' == tagName) {
-            if (!event.target.multiple) {
+            if (!event.target.multiple) { //singular
                 var option = event.target.options[event.target.selectedIndex];
                 this.record("select", this.locatorBuilders.buildAll(event.target), this.getOptionLocator(option));
             } else {
