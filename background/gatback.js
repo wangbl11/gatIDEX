@@ -419,7 +419,7 @@ function addCommand(msg, auto, insertCommand) {
     // create default test suite and case if necessary
     var s_suite = getSelectedSuite(),
         s_case = getSelectedCase();
-
+    console.log(msg);
     let command_name = msg['command'];
     let command_target_array = msg['target'];
     let command_value = msg['value'];
@@ -458,11 +458,15 @@ function addCommand(msg, auto, insertCommand) {
     }
     
     if (_json['command'] == 'dragAndDrop') {
-        if (_json['evtType']=='html5'){
+        if (msg['evtType']=='html5'){
             let parm=_json["parameters"];
             parm["dragType"]="html5";
-            parm["targetLocators"]={};
-            parm["targetElementAttributes"]={};            
+            //console.log(command_value);
+            parm["targetLocators"]={
+                "seleniumLocators": command_value && command_value.length > 0 ? command_value[0] : [],
+                "genericLocator": command_value && command_value.length > 3 ? command_value[3] : {}
+            }
+            parm["targetElementAttributes"]=command_value && command_value.length > 1 ? command_value[1] : {}           
         }
     }
 

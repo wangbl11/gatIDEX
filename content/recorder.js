@@ -27,9 +27,10 @@ class Recorder {
     try {
       if (window != window.top && window.frameElement) {
         let _temp = this.getFrameLocation1();
+        console.log(JSON.stringify(_temp));
         this.locators=_temp&&_temp.length>0?_temp[0]:[];
         this.positions=_temp&&_temp.length>1?_temp[1]:[];
-        console.log(JSON.stringify(this.locators));
+        
       }
     } catch (e) {
       console.log(e.message);
@@ -188,19 +189,21 @@ class Recorder {
   }
 
   getWinInfo(){
-      let _json={
+    let _json={
         type: (this.window == this.window.top)? "top" : "frame",
         title: this.window.document.title
     };
     if (this.window != this.window.top){
         _json['frameLocators']=this.locators?this.locators:[];
         _json['framePositions']=this.positions?this.positions:[];
+        console.log(JSON.stringify(_json['framePositions']));
     }
     return _json;
   }
   record(command, target, value,evtType, insertBeforeLastCommand, actualFrameLocation) {
     let self = this;
     console.log(command);
+    console.log(evtType);
     var _json={
       command: command,
       target: target,
@@ -215,6 +218,7 @@ class Recorder {
     };
     if (this.window != this.window.top){
         _json['winInfo']['frameLocators']=this.locators?this.locators:[];
+        _json['winInfo']['framePositions']=this.positions?this.positions:[];
     }
     
     browser.runtime.sendMessage(_json).catch(function(reason) {

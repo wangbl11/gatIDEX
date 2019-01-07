@@ -410,6 +410,7 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDropToObject', 'dragstart', function(event) {
     var self = this;
+    console.log('dragstart');
     this.dropLocator = setTimeout(function() {
         self.dragstartLocator = event;
     }.bind(this), 200);
@@ -418,10 +419,11 @@ Recorder.addEventHandler('dragAndDropToObject', 'dragstart', function(event) {
 
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDropToObject', 'drop', function(event) {
+    console.log('drop');
     clearTimeout(this.dropLocator);
     if (this.dragstartLocator && event.button == 0 && this.dragstartLocator.target !== event.target) {
         //value no option
-        this.record("dragAndDrop", this.locatorBuilders.buildAll(this.dragstartLocator.target), this.locatorBuilders.build(event.target),'html5dragdrop');
+        this.record("dragAndDrop", this.locatorBuilders.buildAll(this.dragstartLocator.target), this.locatorBuilders.buildAll(event.target),'html5');
     }
     delete this.dragstartLocator;
     delete this.selectMousedown;

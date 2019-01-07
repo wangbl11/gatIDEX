@@ -22,6 +22,7 @@ if (istop) {
                 "url": istop ? window.top.location.href : window.location.href,
                 "type": istop ? "top" : "frame",
                 "frameLocation": recorder.frameLocation,
+                "framePositions":recorder.framePositions,
                 "locators": recorder.locators ? recorder.locators : []
             });
             sending.then(
