@@ -300,7 +300,7 @@ function setStorage(key, val) {
     }
 }
 
-var valueCommands = ["type", "clickAt","check"];
+var valueCommands = ["type", "clickAt","check","editContent"];
 
 function addTopWindow(winInfo) {
     var oneself = -1;

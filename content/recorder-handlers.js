@@ -80,16 +80,18 @@ Recorder.addEventHandler('type', 'input', function(event) {
 });
 
 //rich editor??
+/*
 Recorder.addEventHandler('type1', 'input', function(event) {
 	 var target=event.target;
 	 var tagName = target.tagName?target.tagName.toLowerCase():'';
      var type = target.type;
      if (target.hasAttribute("contenteditable")&&target.getAttribute("contenteditable")=="true")
      {
-           this.record("type1", this.locatorBuilders.buildAll(event.target), event.target.value,'input');
+        console.log(event.target.value);   
+        this.record("type1", this.locatorBuilders.buildAll(event.target), event.target.value,'input');
      }
 });
-
+*/
 //frame?? -- todo
 Recorder.addEventHandler('type2', 'keyup', function(event) {
     //this.clearPauseCommand();
@@ -615,6 +617,7 @@ Recorder.addEventHandler('editContent', 'blur', function(event) {
     if (checkFocus == 1) {
         if (event.target == getEle) {
             if (getEle.innerHTML != contentTest) {
+                console.log(getEle.innerHTML);
                 this.record("editContent", this.locatorBuilders.buildAll(event.target), getEle.innerHTML);
             }
             checkFocus = 0;
