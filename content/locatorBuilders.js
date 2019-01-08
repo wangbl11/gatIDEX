@@ -18,6 +18,10 @@ function LocatorBuilders(window) {
   this.window = window;
   this.doc = window.document;
   //this.log = new Log("LocatorBuilders");
+  if (LocatorBuilders._dynamicIDs.length==0)
+  LocatorBuilders.setDynamicIDs(
+  "^list_item__.+$,^.*[0-9]+$,^.*:[0-9]+:.*$,^.*[_-][0-9]+.*$,[a-zA-Z]*[0-9]+[a-zA-Z]*_,javascript",
+  "^[a-zA-Z_\-]+$");
 }
 
 LocatorBuilders.prototype.reset = function(win) {
@@ -1009,12 +1013,13 @@ LocatorBuilders.add('txt:uncle', function(e) {
 },'xpath');
 
 LocatorBuilders.add('idname', function(e) {
-    var dyId=true;
-    var dyName=true;
+    var dyId=false;
+    var dyName=false;
     var _name=e.name;
+    console.log('idname');
     if (e.id) {
-        var _id=e.id;
-        for (var i=0;i<LocatorBuilders._validIDs.length;i++){
+      var _id=e.id;
+      for (var i=0;i<LocatorBuilders._validIDs.length;i++){
          if (_id.match(LocatorBuilders._validIDs[i])){return 'id=' + e.id;}
       }
       if (_name) {
