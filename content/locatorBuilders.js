@@ -581,7 +581,7 @@ LocatorBuilders.prototype.getCSSSubPath = function(e) {
         //3388, sometimes, highlighted is automatically added when an item is highlighted, so when rerun, it cannot find the highlighted item because it has not been highlighted
       	if (value.indexOf('highlighted')>-1) return null;
 
-        return e.nodeName.toLowerCase() + '.' + value.replace(" ", ".").replace("..", ".").replace(".active","").replace('.oj-focus','');
+        return e.nodeName.toLowerCase() + '.' + value.replace(/\s+/ig, ".").replace("..", ".").replace(".active","").replace('.oj-focus','');
       }
       return e.nodeName.toLowerCase() + '[' + attr + "='" + value + "']";
     }
@@ -1082,19 +1082,25 @@ LocatorBuilders.add('name', function(e) {
 });
 */
 LocatorBuilders.add('css', function(e) {
+  //console.log('css~~~~~~~~~~~');
   var current = e;
   var level=0;
   var sub_path = this.getCSSSubPath(e);
+  //console.log(sub_path);
+  
   var cur_path;
   while (this.findElement("css=" + sub_path) != e && current.nodeName && current.nodeName.toLowerCase() != 'html') {
-    if (level>8) return null;
-        cur_path=this.getCSSSubPath(current.parentNode);
+    if (level>8) {
+        return null;
+    }
+    cur_path=this.getCSSSubPath(current.parentNode);
     if (cur_path==null) return null;
     else
        sub_path = cur_path + ' > ' + sub_path;  
     current = current.parentNode;
     level++;
   }
+  //console.log(sub_path);
   return "css=" + sub_path;
 },'css');
 

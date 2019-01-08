@@ -2192,7 +2192,7 @@ function eval_css(locator, inDocument) {
     } catch (ignored) {
         // Presumably poor formatting
     }
-    //console.log(results);
+    //console.log(results.length);
     return results;
 }
 
