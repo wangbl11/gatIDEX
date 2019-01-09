@@ -115,37 +115,49 @@ Recorder.addEventHandler('type2', 'keyup', function(event) {
 // prevent record two clicks
 var preventClickTwice = false;
 // event.isTrusted - whether it's user click or application logic click
-Recorder.addEventHandler('clickAt', 'click', function(event) {
+Recorder.addEventHandler('clickAt', 'click', function (event) {
     console.log('click~~~~~~~~~~~');
     if (event.button == 0 && !preventClick && canTrusted(event)) {
-        var _target=event.target;
-        var tagName=_target.tagName.toLowerCase();
-        if (tagName=='div'&&_target.scrollWidth>_target.clientWidth) return;
+        var _target = event.target;
+        var tagName = _target.tagName.toLowerCase();
+        if (tagName == 'div' && _target.scrollWidth > _target.clientWidth) return;
 
         if (!preventClickTwice) {
 
             var clickable = this.findClickableElement(_target);
-            if (!clickable){ 
-                this.clickLocator=true;
+            if (!clickable) {
+                this.clickLocator = true;
                 return;
             }
-            var top = event.pageY,
-                left = event.pageX;
-            var element = _target;
-            do {
-                top -= element.offsetTop;
-                left -= element.offsetLeft;
-                element = element.offsetParent;
-            } while (element);
+            var top = event.pageY, left = event.pageX;
+            if (event.nodeName && event.nodeName.toLowerCase() == 'polygon') {
+                top = 0;
+                left = 0;
+            }
+            else {
+                var element = _target;
+                do {
+                    let _top = element.offsetTop;
+                    let _left = element.offsetLeft;
+                    if (_top == undefined || _left == undefined) {
+                        top = 0;
+                        left = 0;
+                        break;
+                    }
+                    top -= _top;
+                    left -= _left;
+                    element = element.offsetParent;
+                } while (element);
+            }
             //var target = event.target;
             console.log('click at~~~~~~~~~~~');
-            this.clickLocator=true;
-            this.record("clickAt", this.locatorBuilders.buildAll(_target), left + ',' + top,'click');
+            this.clickLocator = true;
+            this.record("clickAt", this.locatorBuilders.buildAll(_target), left + ',' + top, 'click');
             //var arrayTest = this.locatorBuilders.buildAll(_target);
             preventClickTwice = true;
         }
         //30 millisecond will clear preventClickTwice
-        setTimeout(function() { preventClickTwice = false; }, 30);
+        setTimeout(function () { preventClickTwice = false; }, 30);
     }
 }, true);
 // END
