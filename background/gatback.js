@@ -240,7 +240,7 @@ function emitMessageToConsole(_type, _json) {
 
     if (!_send || !stompClient) return;
 
-    stepsCount++;
+    
 
     if (_json['optional'] == undefined)
         _json['optional'] = false;
@@ -250,6 +250,20 @@ function emitMessageToConsole(_type, _json) {
         delete _json['coordinates'].top1;
     }
 
+    //workaround for gat-5395
+    if (stepsCount>0){
+        let _lastCmd=steps[stepsCount-1];
+        if (_lastCmd['command']=='type'&&_json['command']=='type'&&_lastCmd['parameters']['value']==_json['parameters']['value']){
+          //judge whether they are same objects
+          let _locators=_lastCmd['locators']['seleniumLocators'];
+          let _locators1=_json['locators']['seleniumLocators'];
+          if (_locators.length>0&&_locators1.length>0&&JSON.stringify(_locators[0])==JSON.stringify(_locators1[0]))
+            return;
+
+        }
+    }
+    
+    stepsCount++;
     stompClient.send(chatRoomId,
         {},
         JSON.stringify({ sender: 'ide', type: _type, content: _json })
