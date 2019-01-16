@@ -17,6 +17,7 @@ var typeTarget;
 
 //????
 var typeLock = 0;
+
 Recorder.inputTypes = ["text", "password", "file", "datetime", "datetime-local", "date", "month", "time", "week", "number", "range", "email", "url", "search", "tel", "color"];
 Recorder.addEventHandler('type', 'change', function(event) {
     // © Chen-Chieh Ping, SideeX Team
@@ -130,29 +131,19 @@ Recorder.addEventHandler('clickAt', 'click', function (event) {
                 return;
             }
             var top = event.pageY, left = event.pageX;
+            let _off;
             if (event.nodeName && event.nodeName.toLowerCase() == 'polygon') {
                 top = 0;
                 left = 0;
+                _off="0,0";
             }
             else {
-                var element = _target;
-                do {
-                    let _top = element.offsetTop;
-                    let _left = element.offsetLeft;
-                    if (_top == undefined || _left == undefined) {
-                        top = 0;
-                        left = 0;
-                        break;
-                    }
-                    top -= _top;
-                    left -= _left;
-                    element = element.offsetParent;
-                } while (element);
+                _off=offsetXY(event);
             }
             //var target = event.target;
             console.log('click at~~~~~~~~~~~');
             this.clickLocator = true;
-            this.record("clickAt", this.locatorBuilders.buildAll(_target), left + ',' + top, 'click');
+            this.record("clickAt", this.locatorBuilders.buildAll(_target), _off, 'click');
             //var arrayTest = this.locatorBuilders.buildAll(_target);
             preventClickTwice = true;
         }
@@ -164,15 +155,8 @@ Recorder.addEventHandler('clickAt', 'click', function (event) {
 
 // © Chen-Chieh Ping, SideeX Team
 Recorder.addEventHandler('doubleClickAt', 'dblclick', function(event) {
-    var top = event.pageY,
-        left = event.pageX;
-    var element = event.target;
-    do {
-        top -= element.offsetTop;
-        left -= element.offsetLeft;
-        element = element.offsetParent;
-    } while (element);
-    this.record("doubleClickAt", this.locatorBuilders.buildAll(event.target), left + ',' + top,'dblclick');
+    let _off=offsetXY(event);
+    this.record("doubleClickAt", this.locatorBuilders.buildAll(event.target), _off,'dblclick');
 }, true);
 // END
 
@@ -318,7 +302,7 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
 
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
-    console.log('mousedown');
+    console.log(event.target?event.target.nodeName:'mousedown');
     var self = this;
     if (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) {
         this.mousedown = event;
@@ -332,8 +316,14 @@ Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
     }
     this.mouseoverQ = [];
 
-    if (event.target.nodeName) {
-        var tagName = event.target.nodeName.toLowerCase();
+    let target=event.target;
+    if (target.nodeName) {
+        let tagName = target.nodeName.toLowerCase();
+        if (tagName=='span'&&target.getAttribute('role')=='slider'){
+            this.lastSlideValue[0]=event.clientX;
+            this.lastSlideValue[1]=event.clientY;
+            return;
+        }
         if ('option' == tagName) {
             var parent = event.target.parentNode;
             if (parent.multiple) {
@@ -350,7 +340,7 @@ Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
     clearTimeout(this.selectMouseup);
-
+    console.log(event.target?event.target.nodeName:'mouseup');
     // let clickable = this.findClickableElement(event.target);
     // if (!clickable) return;
 
@@ -370,11 +360,31 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
             return text.trim();
         }
 
+        //oj-slider
+        let e = event.target;
+        if (e.hasAttribute && e.hasAttribute('class') && e.getAttribute('class').indexOf('oj-slider') >= 0) {
+            var _container = e.closest(".oj-slider-container");
+            if (_container) {
+                var _thumb = _container.querySelector('.oj-slider-thumb');
+                if (_thumb){
+                if (Math.abs(this.lastSlideValue[1] - event.clientY) < 5)
+                    this.record("dragAndDrop", this.locatorBuilders.buildAll(_thumb), (event.clientX - this.lastSlideValue[0]) + ",0", 'slider');
+                else
+                    this.record("dragAndDrop", this.locatorBuilders.buildAll(_thumb), 0 + "," + (event.clientY - this.lastSlideValue[1]), 'slider');
+                }
+            }
+            delete this.mousedown;
+            delete this.selectMousedown;
+            delete this.mouseoverQ;
+            return;
+        }
+
         if (this.selectMousedown && event.button === 0 && (x + y) && (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) && getSelectionText() === '') {
             var sourceRelateX = this.selectMousedown.pageX - this.selectMousedown.target.getBoundingClientRect().left - window.scrollX;
             var sourceRelateY = this.selectMousedown.pageY - this.selectMousedown.target.getBoundingClientRect().top - window.scrollY;
             var targetRelateX, targetRelateY;
-            if (!!this.mouseoverQ.length && this.mouseoverQ[1].relatedTarget == this.mouseoverQ[0].target && this.mouseoverQ[0].target == event.target) {
+            if (!!this.mouseoverQ.length && this.mouseoverQ.length > 1 && this.mouseoverQ[1] && this.mouseoverQ[1].relatedTarget == this.mouseoverQ[0].target && this.mouseoverQ[0].target == event.target) {
+                console.log('in which scenario~~~~~~~~~~~~~~~');
                 targetRelateX = event.pageX - this.mouseoverQ[1].target.getBoundingClientRect().left - window.scrollX;
                 targetRelateY = event.pageY - this.mouseoverQ[1].target.getBoundingClientRect().top - window.scrollY;
                 this.record("mouseDownAt", this.locatorBuilders.buildAll(this.selectMousedown.target), sourceRelateX + ',' + sourceRelateY);
@@ -383,9 +393,11 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
             } else {
                 targetRelateX = event.pageX - event.target.getBoundingClientRect().left - window.scrollX;
                 targetRelateY = event.pageY - event.target.getBoundingClientRect().top - window.scrollY;
+                //else {
                 this.record("mouseDownAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
                 this.record("mouseMoveAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
                 this.record("mouseUpAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
+                //}
             }
         }
     } else {
@@ -393,10 +405,14 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
         delete this.mouseup;
         var x = event.clientX - this.mousedown.clientX;
         var y = event.clientY - this.mousedown.clientY;
-
+        let e=event.target;
         if (this.mousedown && this.mousedown.target !== event.target && !(x + y)) {
-            this.record("mouseDown", this.locatorBuilders.buildAll(this.mousedown.target), '');
-            this.record("mouseUp", this.locatorBuilders.buildAll(event.target), '');
+            if (e.hasAttribute && e.hasAttribute('class') && e.getAttribute('class').indexOf('oj-slider') >= 0){
+                this.record("clickAt", this.locatorBuilders.buildAll(this.mousedown.target), offsetXY(this.mousedown));
+            }else{
+                this.record("mouseDown", this.locatorBuilders.buildAll(this.mousedown.target), '');
+                this.record("mouseUp", this.locatorBuilders.buildAll(event.target), '');
+            }
         } else if (this.mousedown && this.mousedown.target === event.target) {
             /*
                sometimes, click eventhandler cannot capture all click action,
@@ -712,7 +728,7 @@ Recorder.prototype.findClickableElement = function(e) {
     let _switch=e.closest(".oj-switch");
     if (_switch) return e;
 
-    console.log('ojetlist...');
+    //console.log('ojetlist...');
     if (e.parentNode != null) {
         var _isSelect=this.isOjectListExpand(e,tagName,e.parentNode);
         if (_isSelect) return e;

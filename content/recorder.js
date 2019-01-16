@@ -23,7 +23,7 @@ class Recorder {
     this.attached = false;
     this.locatorBuilders = new LocatorBuilders(window);
     this.frameLocation = this.getFrameLocation();
-
+    this.lastSlideValue=[0,0];
     try {
       if (window != window.top && window.frameElement) {
         let _temp = this.getFrameLocation1();

@@ -16,6 +16,7 @@
  *
  */
 var gat_socket_server = null; //'http://slc00blb.us.oracle.com:8080/ws';
+var gat_targetinstance=null;
 var extCommand = new ExtCommand();
 var sentMessagesCnt = 0;
 var elementAttributesTemplate = {
@@ -282,6 +283,7 @@ function getStorage() {
         gat_runner_datafile = results["gat.runner.datafile"];
         gat_recorder_uuid = results["gat.recorder.topicid"];
         gat_socket_server = results["gat.recorder.wsServerURL"];
+        gat_targetinstance=results["gat.recorder.targetInstance"];
         if (!gat_recorder_uuid) {
             console.log('gat.recorder.wsServerURL');
             gat_recorder_uuid = 'c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
@@ -314,7 +316,7 @@ function setStorage(key, val) {
     }
 }
 
-var valueCommands = ["type", "clickAt","check","editContent"];
+var valueCommands = ["type", "clickAt","check","editContent","dragAndDrop"];
 
 function addTopWindow(winInfo) {
     var oneself = -1;
@@ -470,7 +472,7 @@ function addCommand(msg, auto, insertCommand) {
     if (_json['command'] == 'select') {
         _json["parameters"]['strategy'] = "text";
     }
-    
+    console.log(_json['command']);
     if (_json['command'] == 'dragAndDrop') {
         if (msg['evtType']=='html5'){
             let parm=_json["parameters"];
@@ -481,6 +483,14 @@ function addCommand(msg, auto, insertCommand) {
                 "genericLocator": command_value && command_value.length > 3 ? command_value[3] : {}
             }
             parm["targetElementAttributes"]=command_value && command_value.length > 1 ? command_value[1] : {}           
+        }else
+        if (msg['evtType']=='slider')
+        {
+            console.log(msg['evtType']);
+            let parm={};
+            parm["dragType"]="slider";
+            parm['value']=command_value;
+
         }
     }
 
@@ -568,6 +578,8 @@ function fromContentScript(message, sender, sendResponse) {
             message['tabId'] = sender.tab.id;
             message['windowId'] = sender.tab.windowId;
             if (message.type == 'top') {
+                if (gat_targetinstance)
+                  message['url']=gat_targetinstance;
                 addTopWindow(message);
             }
         }

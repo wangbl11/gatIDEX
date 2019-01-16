@@ -71,8 +71,17 @@ function offsetXY(event) {
         left = event.pageX;
     var element = event.target;
     do {
-        top -= element.offsetTop;
-        left -= element.offsetLeft;
+        let _top = element.offsetTop;
+        let _left = element.offsetLeft;
+        //this if is added for polygon
+        /*
+        if (_top == undefined || _left == undefined) {
+            top = 0;
+            left = 0;
+            break;
+        }*/
+        top -= _top;
+        left -= _left;
         element = element.offsetParent;
     } while (element);
     return left+','+top;
