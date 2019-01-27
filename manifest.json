@@ -2,7 +2,7 @@
     "description": "Oracle Globalization Automation Technology - Recording IDE",
     "manifest_version": 2,
     "name": "GatIDEX",
-    "version": "1.0.20",
+    "version": "1.0.23",
     "homepage_url": "https://github.com/wangbl11/gatIDEX",
     "options_ui": {
         "page": "panel/options.html",
@@ -32,7 +32,7 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["content/atoms.js", "content/utils.js","content/tools.js", "content/selenium-browserbot.js",
+            "js": ["content/xhtml-entities.js","content/atoms.js", "content/utils.js","content/tools.js", "content/selenium-browserbot.js",
                    "common/escape.js", "content/selenium-api.js", "content/genericLocators.js","content/locatorBuilders.js",
                    "content/recorder.js", "content/recorder-handlers.js","content/gatide.js", "content/targetSelecter.js",
                    "content/command-receiver.js", "content/sizzle.js"],

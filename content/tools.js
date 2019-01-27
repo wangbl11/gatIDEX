@@ -86,3 +86,58 @@ function offsetXY(event) {
     } while (element);
     return left+','+top;
 }
+
+var EncodeToXhtmlEntity = ["amp", "gt", "lt",  "nbsp","return"];
+var XhtmlEntityFromChars = {};
+for (var i = 0; i < EncodeToXhtmlEntity.length; i++) {
+    var entity = EncodeToXhtmlEntity[i];
+    XhtmlEntityFromChars[XhtmlEntities[entity]] = entity;
+    //38 ->amp
+}
+var XhtmlEntityChars = "[";
+for (var code in XhtmlEntityFromChars) {
+    var c = parseInt(code).toString(16);
+    while (c.length < 4) {
+        c = "0" + c;
+    }
+    XhtmlEntityChars += "\\u" + c;
+}
+XhtmlEntityChars += "]";
+function encodeText(text) {
+    if (text == null) return "";
+    // & -> &amp;
+    // &amp; -> &amp;amp;
+    // &quot; -> &amp;quot;
+    // \xA0 -> &nbsp;
+    text = text.replace(new RegExp(XhtmlEntityChars, "g"),
+                        function(c) {
+            let _code=c.charCodeAt(c);
+            if (unicodeNeeded[_code])
+            {
+                return unicodeNeeded[_code];
+            }
+            var entity = XhtmlEntityFromChars[_code];
+            
+            if (entity) {
+                return "&" + entity + ";";
+            } else {
+                throw "Failed to encode entity: " + c;
+            }
+        });
+    text = text.replace(/ {2,}/g, function(str) {
+            var result = '';
+            for (var i = 0; i < str.length; i++) {
+                result += '&nbsp;';
+            }
+            return result;
+        }); // convert multiple spaces to nbsp
+    //if ('true' == options.escapeDollar)
+    {
+		text = text.replace(/([^\$])\$\{/g, '$1\\${'); // replace [^$]${...} with \${...}
+		text = text.replace(/^\$\{/g, '\\${'); // replace ^${...} with \${...}
+		text = text.replace(/\$\$\{/g, '${'); // replace $${...} with ${...}
+	}
+	//gat-3609
+    //text = text.replace(/\n/g, "<br />");
+	return text;
+}

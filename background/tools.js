@@ -11,6 +11,43 @@ function uuid() {
     var uuid = s.join("");
     return uuid;
 }
+var EncodeToXhtmlEntity = ["amp", "gt", "lt",  "nbsp"];
+var XhtmlEntityFromChars = {};
+for (var i = 0; i < EncodeToXhtmlEntity.length; i++) {
+    var entity = EncodeToXhtmlEntity[i];
+    XhtmlEntityFromChars[XhtmlEntities[entity]] = entity;
+}
+function encodeText(text) {
+    if (text == null) return "";
+    // & -> &amp;
+    // &amp; -> &amp;amp;
+    // &quot; -> &amp;quot;
+    // \xA0 -> &nbsp;
+    text = text.replace(new RegExp(XhtmlEntityChars, "g"),
+                        function(c) {
+            var entity = XhtmlEntityFromChars[c.charCodeAt(c)];
+            if (entity) {
+                return "&" + entity + ";";
+            } else {
+                throw "Failed to encode entity: " + c;
+            }
+        });
+    text = text.replace(/ {2,}/g, function(str) {
+            var result = '';
+            for (var i = 0; i < str.length; i++) {
+                result += '&nbsp;';
+            }
+            return result;
+        }); // convert multiple spaces to nbsp
+	if ('true' == options.escapeDollar) {
+		text = text.replace(/([^\$])\$\{/g, '$1\\${'); // replace [^$]${...} with \${...}
+		text = text.replace(/^\$\{/g, '\\${'); // replace ^${...} with \${...}
+		text = text.replace(/\$\$\{/g, '${'); // replace $${...} with ${...}
+	}
+	//gat-3609
+    //text = text.replace(/\n/g, "<br />");
+	return text;
+}
 function sshot(request,winInfo) {
     return new Promise(function (resolve, reject) {
         chrome.tabs.captureVisibleTab(null, { format: 'jpeg' }, (dataUrl) => {

@@ -77,8 +77,8 @@ GenericLocators.prototype.gl_genObject = function(element){
       var nodetext = textNodes.currentNode.data.trim();
       console.log('[DEBUG] Getting text: ' + nodetext);
       this.glTextMap.has(nodetext) ? this.glTextMap.set(nodetext, this.glTextMap.get(nodetext)+1) : this.glTextMap.set(nodetext, 1);
-      elemObj['types'].push('textContent');
-      elemObj['texts'].push(nodetext);
+      elemObj['types'].push('textContent');encodeText
+      elemObj['texts'].push(encodeText(nodetext));
     }
     // Note down the element.innerText for reference
     if(element.innerText && elemObj['types'].length<=10){

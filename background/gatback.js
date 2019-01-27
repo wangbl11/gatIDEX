@@ -31,7 +31,10 @@ var stompClient;
 var isRecording = false;
 var isPlaying = false;
 var isSelecting = false;
-
+var _defer=false;
+function delayEmit(cmd){
+    return false;
+}
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
     var _json = {
@@ -59,7 +62,8 @@ getStorage();
 //stompClient.debug = () => {};
 var uuid = UUID.generate();
 var connected = false;
-var chatRoomId = '/app/chat.privateMsg.';
+let _prefix='/app/chat.privateMsg.';
+var chatRoomId = _prefix;
 var reconInt;
 function connectSocketServer() {
     if (gat_socket_server.startsWith('http')) {
@@ -73,23 +77,30 @@ function connectSocketServer() {
     stompClient.connect({ "id": uuid }, onConnected, onError);
 
 }
+function resend(){
+    if (steps.length>0&&sentMessagesCnt<steps.length){
+        
+    }
+}
 function onConnected(frame) {
     console.log('connected');
-    clearInterval(reconInt);
+    if (reconInt)
+     clearInterval(reconInt);
     stompClient.subscribe("/topic/" + gat_recorder_uuid, onMessageReceived);
     stompClient.subscribe("/user/exchange/amq.direct/chat.message", onMessageReceived);
-    chatRoomId += gat_recorder_uuid;
+    chatRoomId =_prefix+ gat_recorder_uuid;
 
 }
 function onError(frame) {
-    // console.log(frame);
-    // console.log(stompClient);
-    // console.log(socket);
+    console.log(frame);
+    console.log(stompClient);
+    console.log(socket);
     reconInt = setTimeout(() => {
         if (stompClient.ws.readyState === WebSocket.CONNECTING) {
             return;
         }
         if (stompClient.ws.readyState === WebSocket.OPEN) {
+            if (reconInt)
             clearInterval(reconInt);
             return;
         }
@@ -230,47 +241,111 @@ function ignoreLastStep(_last, _json) {
     return _ignore;
 }
 function emitMessageToConsole(_type, _json) {
-    //if not in recording mode, ignore all messages
-    let _send = false;
-    if (_type == 'SYSTEM') _send = true;
-    else
-        if (_type == 'SELECT') _send = true;
+    try {
+        //if not in recording mode, ignore all messages
+        console.log('prepare to send... ' + _type);
+        // if (_json['command']=='typeInCodeMirror')
+        // {console.log(JSON.stringify(_json));
+        // console.log(escape(JSON.stringify(_json)));
+        // }
+        let _send = false;
+        if (_type == 'SYSTEM') _send = true;
         else
-            if (isRecording) _send = true;
-            else if (steps.length == 0) _send = true;
+            if (_type == 'SELECT') _send = true;
+            else
+                if (isRecording) _send = true;
+                else if (steps.length == 0) _send = true;
 
-    if (!_send || !stompClient) return;
+        if (!_send || !stompClient) return;
 
-    
+        console.log(_send);
 
-    if (_json['optional'] == undefined)
-        _json['optional'] = false;
+        if (_json['optional'] == undefined)
+            _json['optional'] = false;
 
-    if (_json['coordinates']) {
-        delete _json['coordinates'].left1;
-        delete _json['coordinates'].top1;
-    }
+        console.log(1);
+        if (_json['coordinates']) {
+            delete _json['coordinates'].left1;
+            delete _json['coordinates'].top1;
+        }
+        console.log(2);
+        //workaround for gat-5395
+        if (stepsCount > 0) {
+            console.log(3);
+            let _lastCmd = steps[steps.length - 1];
+            if (_lastCmd['command'] == 'type' && _json['command'] == 'type' && _lastCmd['parameters']['value'] == _json['parameters']['value']) {
+                //judge whether they are same objects
+                let _locators = _lastCmd['locators']['seleniumLocators'];
+                let _locators1 = _json['locators']['seleniumLocators'];
+                if (_locators.length > 0 && _locators1.length > 0 && JSON.stringify(_locators[0]) == JSON.stringify(_locators1[0]))
+                    return;
 
-    //workaround for gat-5395
-    if (stepsCount>0){
-        let _lastCmd=steps[stepsCount-1];
-        if (_lastCmd['command']=='type'&&_json['command']=='type'&&_lastCmd['parameters']['value']==_json['parameters']['value']){
-          //judge whether they are same objects
-          let _locators=_lastCmd['locators']['seleniumLocators'];
-          let _locators1=_json['locators']['seleniumLocators'];
-          if (_locators.length>0&&_locators1.length>0&&JSON.stringify(_locators[0])==JSON.stringify(_locators1[0]))
-            return;
+            }
+
+            // if (_defer == true&&_lastCmd['command'] == 'clickAt' && _json['command'] == 'type' && _json['elementAttributes']&&_lastCmd['elementAttributes']) {
+            //     //judge whether they are same objects
+            //     let _tag1 = _lastCmd['elementAttributes']['tag'];
+            //     let _tag = _json['elementAttributes']['tag'];
+            //     if (_tag == 'input' && _tag1 == 'input') {
+            //         let _type1 = _lastCmd['elementAttributes']['type'];
+            //         let _type = _json['elementAttributes']['type'];
+            //         if (_type == 'text' && _type1 == 'text') {
+            //             let _locators = _lastCmd['locators']['seleniumLocators'];
+            //             let _locators1 = _json['locators']['seleniumLocators'];
+            //             if (_locators.length > 0 && _locators1.length > 0 && JSON.stringify(_locators[0]) == JSON.stringify(_locators1[0])){
+            //                //don't need send last command 
+            //                console.log('type in input[text]');
+            //                _defer = false;
+            //             }
+            //         }
+            //     }
+            // }
+            // if (_defer) {
+            //     console.log('send defer')
+            //     try {
+            //         stompClient.send(chatRoomId,
+            //             {},
+            //             JSON.stringify({ sender: 'ide', type: _type, content: _lastCmd })
+            //         );
+            //     } catch (err) {
+            //         console.log(err.message);
+            //     }
+            //     _defer = false;
+            // }
+            //input defer emit
+            // if (_json['command'] == 'clickAt' && _json['elementAttributes']) {
+                
+            //     let _tag = _json['elementAttributes']['tag'];
+            //     if (_tag == 'input') {
+            //         let _type = _json['elementAttributes']['type'];
+            //         if (_type && _type == 'text') {
+            //             console.log('defer click on input[text]')
+            //             _defer = true;
+            //             steps.push(_json);
+            //             return;
+            //         }
+            //     }
+            // }
+            console.log(_defer);
+            console.log(_lastCmd);
+            
 
         }
-    }
-    
-    stepsCount++;
-    stompClient.send(chatRoomId,
-        {},
-        JSON.stringify({ sender: 'ide', type: _type, content: _json })
-    );
+        console.log(4);
 
-    steps.push(_json);
+        try {
+                stompClient.send(chatRoomId,
+                    {},
+                    JSON.stringify({ sender: 'ide', type: _type, content: _json })
+                );
+        } catch (err) {
+            console.log(err.message);
+        }
+        stepsCount++;
+        steps.push(_json);
+    } catch (e) {
+        console.error(e.message);
+    }
     //setStorage(1, steps);
 }
 
@@ -289,9 +364,9 @@ function getStorage() {
             gat_recorder_uuid = 'c6ac9fd6-5550-40a5-b62b-3403f12d6c6c';
         }
         if (!gat_socket_server) {
-            gat_socket_server = 'http://slc00blb.us.oracle.com:8080/ws';
+            //gat_socket_server = 'http://slc00blb.us.oracle.com:8080/ws';
             console.log('not specify gat_socket_server');
-            //gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
+            gat_socket_server='ws://rws3510112.us.oracle.com:30010/html5';
         }
 
         console.log(gat_socket_server);
@@ -316,7 +391,7 @@ function setStorage(key, val) {
     }
 }
 
-var valueCommands = ["type", "clickAt","check","editContent","dragAndDrop"];
+var valueCommands = ["type", "clickAt","check","editContent","dragAndDrop","typeInCodeMirror"];
 
 function addTopWindow(winInfo) {
     var oneself = -1;
@@ -327,7 +402,8 @@ function addTopWindow(winInfo) {
         for (var i = 0; i < recordingWindows.length; i++) {
             let _one = recordingWindows[i];
             if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-                if (_one['hostname'] == winInfo['hostname']) {
+                //if (_one['hostname'] == winInfo['hostname']) 
+                {
                     oneself = i;
                     break;
                 }
@@ -449,8 +525,7 @@ function addCommand(msg, auto, insertCommand) {
         _json = {
             "command": command_name,
             "locators": {
-                "seleniumLocators": command_target_array && command_target_array.length > 0 ? command_target_array[0] : [],
-                "genericLocator": command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
+                "seleniumLocators": command_target_array && command_target_array.length > 0 ? command_target_array[0] : []
             },
             "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
             "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
@@ -461,6 +536,9 @@ function addCommand(msg, auto, insertCommand) {
         if (valueCommands.indexOf(command_name) >= 0) {
                 _json["parameters"]['value'] = command_value;
         }
+        //if (_json['command']!='typeInCodeMirror')
+         _json["locators"]["genericLocator"]=command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
+
     }
     //composite display name
     compositeDisplayName(_json);
@@ -482,6 +560,7 @@ function addCommand(msg, auto, insertCommand) {
                 "seleniumLocators": command_value && command_value.length > 0 ? command_value[0] : [],
                 "genericLocator": command_value && command_value.length > 3 ? command_value[3] : {}
             }
+            
             parm["targetElementAttributes"]=command_value && command_value.length > 1 ? command_value[1] : {}           
         }else
         if (msg['evtType']=='slider')
@@ -493,12 +572,14 @@ function addCommand(msg, auto, insertCommand) {
 
         }
     }
-
+    //console.log(JSON.stringify(_json));
     //capture screenshot
     sshot(_json["coordinates"], _json['winInfo']).then(function (d) {
+        console.log('~~~~~~~~~~~~~~~~~~~~~ shot finish');
         _json['img'] = d;
         if (_json["locators"] && _json["locators"]["genericLocator"]) {
             captureElement(_json["coordinates"]).then(function (d) {
+                console.log('~~~~~~~~~~~~~~~~~~~~~ capture element finish');
                 _json["locators"]["genericLocator"]["image"] = d;
                 emitMessageToConsole('STEP', _json);
             }, function (d) { console.log(d); });

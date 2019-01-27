@@ -269,20 +269,23 @@ LocatorBuilders.prototype.buildAll = function(el) {
           locators.push(genericLocator);
       }
       catch (err) {
-        locators.push([]);
+          //when get error push {} not []
+        locators.push({});
         console.log(err.message);
       }
   }
   return locators;
 };
 
-var elementsAttrs = ["placeholder"];
+var elementsAttrs = ["placeholder","type"];
 LocatorBuilders.prototype.computeElementAttrs = function(e,el) {
   var ele=e?e:el
   var _json = {};
   if (ele.tagName)
     _json['tag'] = ele.tagName.toLowerCase();
-  for (var one in elementsAttrs) {
+  for (let i=0;i<elementsAttrs.length;i++) {
+     let one=elementsAttrs[i];
+    //console.log(one + ele.getAttribute(one));
     if (ele.hasAttribute && ele.hasAttribute(one)) {
       _json[one] = ele.getAttribute(one);
     }
@@ -487,6 +490,133 @@ LocatorBuilders._ensureAllPresent = function(sourceArray, destArray) {
   return changed;
 };
 
+LocatorBuilders.prototype.getElementDataXPath = function(element, rootNode){
+    var xpaths = [];
+    console.log('[DEBUG] Begin of getElementDataXPath()');
+    try {
+      //result is { "dataRelated": true/false, "dataRootElement": elem/null }
+      var result = this.checkIfDataRelated(element, rootNode);
+      if (result.dataRelated) {
+        xpaths =
+            this.genUniqueXPathsFromDataRoot(element, result.dataRootElement,
+                                             result.dataRootClassName);
+      }
+    }catch(e){
+      console.log("Error during getElementDataXPath: " + e.message);
+    }
+    return xpaths;
+  }
+  
+  LocatorBuilders.prototype.checkIfDataRelated = function(element, rootNode){
+    var ret = {"dataRelated": false, "dataRootElement": null, "dataRootClassName": null};
+    //TODO in future: check if element is a candidate element contained in data section
+    //eg. it's too large, it only contains inline element etc.
+    //for now just check if its ancestor is a table, listView etc.
+  
+    //element's ancestor should be a table, listView etc.
+    var parent = element.parentNode;
+    var upLevel = 1;
+    var found = null;
+    var className = null;
+    while(parent && (parent != rootNode) && upLevel < 16){
+      if(parent.classList && parent.classList.length > 0){
+        for(var i=0; i<LocatorBuilders.DATA_CLASSES.length; i++){
+          if(parent.classList.contains(LocatorBuilders.DATA_CLASSES[i])){
+            found = parent;
+            className = LocatorBuilders.DATA_CLASSES[i];
+            break;
+          }
+        }
+      }
+      parent = parent.parentNode;
+      upLevel++;
+    }
+    if(found){
+      ret.dataRelated = true;
+      ret.dataRootElement = found;
+      ret.dataRootClassName = className;
+    }
+    return ret;
+  }
+  
+LocatorBuilders.DATA_CLASSES = [
+    "af_listItem",
+    "oj-listview-item", "oj-table-body-row"
+];
+LocatorBuilders.prototype.genUniqueXPathsFromDataRoot = function(element, dataRootElement, dataRootClassName){
+    var nodeIterator = this.window.document.createNodeIterator(
+        dataRootElement,
+        4,
+        {
+          acceptNode: function (node) {
+            if (!node.data.match(/^\s*$/)) return 1;
+          }
+        }
+    );
+    var texts = {};
+    var currentNode;
+    while (currentNode = nodeIterator.nextNode()) {
+      if(texts[currentNode.nodeValue]){
+        texts[currentNode.nodeValue] = texts[currentNode.nodeValue] + 1;
+      } else {
+        texts[currentNode.nodeValue] = 1;
+      }
+    }
+    var uniqueTexts = [];
+    for(var prop in texts){
+      if(/^([0-9]|\/|\s)*$/.test(prop))
+        continue;
+      if(texts[prop] == 1){
+        uniqueTexts.push(prop);
+      }
+    }
+    var xpaths = [];
+    for(var i=0; i<uniqueTexts.length; i++){
+      // var xpath = "//" + element.tagName + "[@class='" + element.className + "'][ancestor::" + dataRootElement.tagName
+      //           + "[contains(@class, 'af_listItem')]" + "[contains(.,'" + uniqueTexts[i] + "')]]";
+      var xpath = LocatorBuilders.DATA_ROOT_XPATH.replace("DATA_ROOT_TAG", dataRootElement.tagName)
+          .replace("DATA_ROOT_CLASS_NAME", dataRootClassName)
+          .replace("UNIQUE_TEXT", uniqueTexts[i]);
+      if(element.className){
+        xpath = xpath + "//" + element.tagName + "[@class='" + element.className + "']";
+      } else { //actually we can always use this branch, to check again in future
+        xpath = xpath + this.getElementTreeXPathFromDataRoot(element, dataRootElement);
+      }
+      if(this.getElementCount("xpath", xpath) == 1){
+        xpaths.push(xpath);
+      }
+      if(xpaths.length == 5){ //only found at most 5
+        break;
+      }
+    }
+    return xpaths;
+ }
+
+ LocatorBuilders.prototype.getElementTreeXPathFromDataRoot = function(element, dataRootElement){
+    var paths = [];
+    for(; element != dataRootElement && element.nodeType == 1; element = element.parentNode){
+      paths.splice(0, 0, this.relativeXPathFromParent(element));
+    }
+    var result = paths.length ? paths.join('') : null;
+    console.log("[DEBUG] getElementTreeXPathFromDataRoot: " + result);
+    return result;
+};
+
+LocatorBuilders.prototype.getElementCount = function(using,locator) {
+    var target = {};
+    target[using] = locator;
+    var elemNum = 0;
+    try{
+      //var elements = this.findElements(using, locator);
+      var elements = this.findElement(locator);
+      elemNum = elements.length;
+      console.log("getElementCount: " + elemNum + " (using = " + using + ", locator = " + locator + ")");
+    }catch(ex){
+      console.log("[ERROR] getElementCount: Generated selector is wrong: using = " + using + ", locator = " + locator);
+      console.log("[ERROR] getElementCount: Generated selector is wrong with exception: " + ex);
+    }
+    return elemNum;
+};
 /*
  * Utility function: Encode XPath attribute value.
  */
@@ -581,7 +711,7 @@ LocatorBuilders.prototype.getCSSSubPath = function(e) {
         //3388, sometimes, highlighted is automatically added when an item is highlighted, so when rerun, it cannot find the highlighted item because it has not been highlighted
       	if (value.indexOf('highlighted')>-1) return null;
 
-        return e.nodeName.toLowerCase() + '.' + value.replace(/\s+/ig, ".").replace("..", ".").replace(".active","").replace('.oj-focus','');
+        return e.nodeName.toLowerCase() + '.' + value.replace(/\s+/ig, ".").replace("..", ".").replace(".active","").replace('.oj-focus','').replace('.CodeMirror-focused','');
       }
       return e.nodeName.toLowerCase() + '[' + attr + "='" + value + "']";
     }
@@ -964,7 +1094,12 @@ LocatorBuilders.prototype.tryAncestor = function(element){
 //   return UIMap.getInstance().getUISpecifierString(pageElement,
 //     this.window.document);
 // });
-
+/*
+LocatorBuilders.add('xpath:data', function(e) {
+    this.getElementDataXPath(e, rootNode);
+},'xpath'
+);
+*/
 LocatorBuilders.add('txt:polygon', function(e) {
     var path = '';
     var current = e;
@@ -1012,39 +1147,39 @@ LocatorBuilders.add('txt:uncle', function(e) {
      return this.tryAncestor(e);
 },'xpath');
 
-LocatorBuilders.add('idname', function(e) {
-    var dyId=false;
+LocatorBuilders.add('idname', function (e) {
+    var dyId = false;
+    var _name = e.name;
+    console.log('id');
+    if (e.id) {
+        var _id = e.id;
+        for (var i = 0; i < LocatorBuilders._validIDs.length; i++) {
+            if (_id.match(LocatorBuilders._validIDs[i])) { return 'id=' + e.id; }
+        }
+
+        for (var i = 0; i < LocatorBuilders._dynamicIDs.length; i++) {
+            if (_id.match(LocatorBuilders._dynamicIDs[i])) { dyId = true; break; }
+        }
+        if (dyId == false)
+            return 'id=' + e.id;
+    }
+    return null;
+}, 'id');
+
+LocatorBuilders.add('name', function(e) {
     var dyName=false;
     var _name=e.name;
-    console.log('idname');
-    if (e.id) {
-      var _id=e.id;
-      for (var i=0;i<LocatorBuilders._validIDs.length;i++){
-         if (_id.match(LocatorBuilders._validIDs[i])){return 'id=' + e.id;}
-      }
-      if (_name) {
+    console.log('name');
+    
+    if (_name) {
         for (var i=0;i<LocatorBuilders._dynamicIDs.length;i++){
-            if (_name.match(LocatorBuilders._dynamicIDs[i])){dyName=true;break;}
+             if (_name.match(LocatorBuilders._dynamicIDs[i])){dyName=true;break;}
         }
         if (dyName==false)
            return 'name=' + e.name;
-      }
-  
-        for (var i=0;i<LocatorBuilders._dynamicIDs.length;i++){
-          if (_id.match(LocatorBuilders._dynamicIDs[i])){dyId=true;break;}
-      }
-      if (dyId==false)
-        return 'id=' + e.id;
-    }else
-       if (_name) {
-         for (var i=0;i<LocatorBuilders._dynamicIDs.length;i++){
-             if (_name.match(LocatorBuilders._dynamicIDs[i])){dyName=true;break;}
-         }
-         if (dyName==false)
-            return 'name=' + e.name;
-       }
+    }
     return null;
-},'idname');
+},'name');
 
 LocatorBuilders.add('link', function(e) {
   if (e.nodeName==null) return null;

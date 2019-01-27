@@ -22,12 +22,13 @@ Recorder.inputTypes = ["text", "password", "file", "datetime", "datetime-local",
 Recorder.addEventHandler('type', 'change', function(event) {
     // © Chen-Chieh Ping, SideeX Team
     console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ change');
-    let target=event.target
+    let target=event.target;
     if (target.tagName && !preventType && typeLock == 0 && (typeLock = 1)) {
         // END
             var tagName = target.tagName.toLowerCase();
             var type = target.type;
             let _evtType="change";
+            console.log(tagName);
             if ('input' == tagName && Recorder.inputTypes.indexOf(type) >= 0) {
                 if (target.value.length > 0) {
                     
@@ -56,20 +57,28 @@ Recorder.addEventHandler('type', 'change', function(event) {
                     this.record("type", this.locatorBuilders.buildAll(target), event.target.value,_evtType);
                 }
             } else if ('textarea' == tagName) {
-                let _codeMirror=event.target.closest('.CodeMirror');
+                let _codeMirror=target.closest('.CodeMirror');
                 if (_codeMirror){
+                    
+                    //_locators is an array, every element is a json
                     let _locators=this.locatorBuilders.buildAll(_codeMirror);
+                    //console.log(JSON.stringify(_locators));
                     if (_locators&&_locators.length>0){
-                      let _locator=_locators[0].values;
+                      //_locators[0] is the fist json, {'finder':'xpath','values':['','']}
+                      let _slocator=_locators[0];
+                      if (_slocator&&_slocator instanceof Array && _slocator.length>0)
+                      {let _locator=_slocator[0].values;
                       if (_locator&&_locator instanceof Array&&_locator.length>0){
-                        var _script="tags = document.evaluate(\""
-                          +_locator[0]
-                          +"\", document, null, XPathResult.ANY_TYPE, null); tag = tags.iterateNext();if (tag){tag.CodeMirror.setValue(\""+event.target.value+"\");}";
-                        this.record("typeInCodeMirror", _locators, target.value,_codeMirror.nodeName,_evtType);
+                        // var _script="tags = document.evaluate(\""
+                        //   +_locator[0]
+                        //   +"\", document, null, XPathResult.ANY_TYPE, null); tag = tags.iterateNext();if (tag){tag.CodeMirror.setValue(\""+event.target.value+"\");}";
+                        // this cause auto-connect?
+                        this.record("typeInCodeMirror", _locators, target.value,_evtType);
+                      }
                       }
                     }
                 }else
-                    this.record("type", this.locatorBuilders.buildAll(target), event.target.value,tagName,_evtType);
+                    this.record("type", this.locatorBuilders.buildAll(target), target.value,_evtType);
             }
         }
         typeLock = 0;
@@ -113,6 +122,34 @@ Recorder.addEventHandler('type2', 'keyup', function(event) {
 
 // © Jie-Lin You, SideeX Team
 
+Recorder.prototype.callIfMeaningfulEvent = function(handler) {
+    console.log("callIfMeaningfulEvent");
+    this.delayedRecorder = handler;
+    var self = this;
+    this.domModifiedTimeout = setTimeout(function() {
+            consoleo.log("clear event");
+            self.delayedRecorder = null;
+            self.domModifiedTimeout = null;
+        }, 50); //move it back to 50 to avoid many noise, eg: 3934, keep track with it if cause other issue
+};
+
+Recorder.prototype.domModified = function() {
+    if (this.delayedRecorder) {
+        this.delayedRecorder.apply(this);
+        this.delayedRecorder = null;
+        if (this.domModifiedTimeout) {
+            clearTimeout(this.domModifiedTimeout);
+        }
+    }
+};
+// Recorder.addEventHandler('attrModified', 'DOMAttrModified', function(event) {
+//     this.domModified();
+// }, {capture: true});
+
+Recorder.addEventHandler('nodeInserted', 'DOMNodeInserted', function(event) {
+    this.domModified();
+}, {capture: true});
+
 // prevent record two clicks
 var preventClickTwice = false;
 // event.isTrusted - whether it's user click or application logic click
@@ -128,6 +165,9 @@ Recorder.addEventHandler('clickAt', 'click', function (event) {
             var clickable = this.findClickableElement(_target);
             if (!clickable) {
                 this.clickLocator = true;
+                // this.callIfMeaningfulEvent(function() {
+                //     this.record("clickAt", this.locatorBuilders.buildAll(_target), "0,0", 'click');
+                // });
                 return;
             }
             var top = event.pageY, left = event.pageX;
@@ -154,10 +194,10 @@ Recorder.addEventHandler('clickAt', 'click', function (event) {
 // END
 
 // © Chen-Chieh Ping, SideeX Team
-Recorder.addEventHandler('doubleClickAt', 'dblclick', function(event) {
-    let _off=offsetXY(event);
-    this.record("doubleClickAt", this.locatorBuilders.buildAll(event.target), _off,'dblclick');
-}, true);
+// Recorder.addEventHandler('doubleClickAt', 'dblclick', function(event) {
+//     let _off=offsetXY(event);
+//     this.record("doubleClickAt", this.locatorBuilders.buildAll(event.target), _off,'dblclick');
+// }, true);
 // END
 
 // © Chen-Chieh Ping, SideeX Team
@@ -302,7 +342,6 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
 
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
-    console.log(event.target?event.target.nodeName:'mousedown');
     var self = this;
     if (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) {
         this.mousedown = event;
@@ -340,7 +379,6 @@ Recorder.addEventHandler('dragAndDrop', 'mousedown', function(event) {
 // © Shuo-Heng Shih, SideeX Team
 Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
     clearTimeout(this.selectMouseup);
-    console.log(event.target?event.target.nodeName:'mouseup');
     // let clickable = this.findClickableElement(event.target);
     // if (!clickable) return;
 
@@ -378,7 +416,9 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
             delete this.mouseoverQ;
             return;
         }
-
+        console.log(this.mouseoverQ?'over: '+this.mouseoverQ.length:'undefined');
+        /* disable for drag/drop mouse wheel; it only check offset of mousedown and mouseup
+        // it does not check whether the target itself offset change
         if (this.selectMousedown && event.button === 0 && (x + y) && (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) && getSelectionText() === '') {
             var sourceRelateX = this.selectMousedown.pageX - this.selectMousedown.target.getBoundingClientRect().left - window.scrollX;
             var sourceRelateY = this.selectMousedown.pageY - this.selectMousedown.target.getBoundingClientRect().top - window.scrollY;
@@ -393,13 +433,12 @@ Recorder.addEventHandler('dragAndDrop', 'mouseup', function(event) {
             } else {
                 targetRelateX = event.pageX - event.target.getBoundingClientRect().left - window.scrollX;
                 targetRelateY = event.pageY - event.target.getBoundingClientRect().top - window.scrollY;
-                //else {
                 this.record("mouseDownAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
                 this.record("mouseMoveAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
-                this.record("mouseUpAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
-                //}
+                this.record("mouseUpAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);                
             }
         }
+        */
     } else {
         delete this.clickLocator;
         delete this.mouseup;
@@ -646,7 +685,7 @@ Recorder.addEventHandler('editContent', 'blur', function(event) {
         if (event.target == getEle) {
             if (getEle.innerHTML != contentTest) {
                 console.log(getEle.innerHTML);
-                this.record("editContent", this.locatorBuilders.buildAll(event.target), getEle.innerHTML);
+                this.record("type", this.locatorBuilders.buildAll(event.target), getEle.innerHTML);
             }
             checkFocus = 0;
         }
@@ -711,9 +750,9 @@ Recorder.prototype.findClickableElement = function(e) {
     var tagName = e.tagName.toLowerCase();
     var type = e.type;
     var _cursor=this.window.getComputedStyle(e,null).getPropertyValue('cursor');
-	if (e.hasAttribute("onclick") || e.hasAttribute("href") || tagName == "button" || tagName == "a" ||_cursor=='pointer'||
+	if (e.hasAttribute("onclick") || e.hasAttribute("on-click") ||e.hasAttribute("href") || tagName == "button" || tagName == "a" ||_cursor=='pointer'||
 		(tagName == "input" &&
-		 (type == "submit" || type == "button" || type == "image" || type == "radio" || type == "checkbox" || type == "reset"))
+		 ( type == "submit" || type == "button" || type == "image" || type == "radio" || type == "checkbox" || type == "reset"))
      ||(e.hasAttribute('data-bind')&&e.getAttribute("data-bind").indexOf("click")>=0)) {
         console.log('clickable');
         return e;
@@ -738,6 +777,7 @@ Recorder.prototype.findClickableElement = function(e) {
     }
 };
 
+/*
 Recorder.prototype.findClickableElementBak = function(e) {
     if (!e.tagName) return null;
     var tagName = e.tagName.toLowerCase();
@@ -754,6 +794,7 @@ Recorder.prototype.findClickableElementBak = function(e) {
         }
     }
 };
+*/
 
 //select / addSelect / removeSelect
 //this method is for <select> to initialize, in Selenium IDE it's disposed in 'mousedown' event
