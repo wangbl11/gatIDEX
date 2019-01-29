@@ -30,12 +30,11 @@ class Recorder {
         console.log(JSON.stringify(_temp));
         this.locators=_temp&&_temp.length>0?_temp[0]:[];
         this.positions=_temp&&_temp.length>1?_temp[1]:[];
-        
       }
     } catch (e) {
       console.log(e.message);
     }
-
+    console.log('finish construct Recorder....')
   }
   
   // This part of code is copyright by Software Freedom Conservancy(SFC)

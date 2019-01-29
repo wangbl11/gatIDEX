@@ -35,6 +35,8 @@ var _defer=false;
 function delayEmit(cmd){
     return false;
 }
+var lastStepMillisecond=Date.now();
+console.log(lastStepMillisecond);
 //dummy functions, because we don't get case and suite information from recorder UI
 function getSelectedCase() {
     var _json = {
@@ -332,17 +334,40 @@ function emitMessageToConsole(_type, _json) {
 
         }
         console.log(4);
-
+        let _sleepBefore=0;
+        let _tempnow=Date.now();
+        console.log(_tempnow);
         try {
-                stompClient.send(chatRoomId,
-                    {},
-                    JSON.stringify({ sender: 'ide', type: _type, content: _json })
-                );
+            if (steps.length > 0) {
+                let _elapse=Math.round((_tempnow-lastStepMillisecond)/2000);
+                if (_elapse>5){
+                    stepsCount++;
+                    let _wait={"command":"wait","parameters":{"value":_elapse}};
+                    steps.push(_wait);
+                    stompClient.send(chatRoomId,
+                        {},
+                        JSON.stringify({ sender: 'ide', type: _type, content: _wait })
+                    );
+                }else{
+                    _sleepBefore=_elapse;
+                }
+                if (_json["parameters"]) {
+                    _json["parameters"]["sleepBefore"] = _sleepBefore;
+                } else {
+                    _json["parameters"] = { "sleepBefore": _sleepBefore };
+                }
+            }
+            lastStepMillisecond = _tempnow;
+            stompClient.send(chatRoomId,
+                {},
+                JSON.stringify({ sender: 'ide', type: _type, content: _json })
+            );
         } catch (err) {
             console.log(err.message);
         }
         stepsCount++;
         steps.push(_json);
+
     } catch (e) {
         console.error(e.message);
     }
@@ -414,7 +439,8 @@ function addTopWindow(winInfo) {
             let _open = {
                 "command": 'open',
                 "parameters": {                   
-                    "url": winInfo['url']
+                    "url": winInfo['url'],
+                    "sleepBefore":0
                     // "parametrize":[
                     //   {
                     //     "enabled": true,
