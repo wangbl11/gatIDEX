@@ -135,14 +135,20 @@ class Recorder {
           this.locatorBuilders.window=currentParentWindow;
           this.locatorBuilders.doc=currentParentWindow.document;
           let _ret=this.locatorBuilders.buildAll(currentWindow.frameElement);
+          let _frame={
+             "locators":[]
+          }
+          if (_ret&&_ret.length>0){
+             _frame['locators']=_ret[0];
+          }
           if (_frames.length==0)
           {   
-              _frames.push(_ret&&_ret.length>0?_ret[0]:[]);
+              _frames.push(_frame);
               _positions.push(_ret&&_ret.length>1?_ret[1]:{});
           }
           else
           {
-              _frames.unshift(_ret&&_ret.length>0?_ret[0]:[]);
+              _frames.unshift(_frame);
               _positions.unshift(_ret&&_ret.length>1?_ret[1]:{});
           }
             /////////////////////////////////////////

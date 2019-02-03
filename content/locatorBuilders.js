@@ -1108,7 +1108,7 @@ LocatorBuilders.add('txt:polygon', function(e) {
     var _ret=null;
     if (e.nodeName == 'polygon') {
       idx=this.getNodeNbr(current);
-      if (idx<1) return null;
+      if (idx<0) return null;
        while (current != null) {
            if (current.parentNode != null) {
                  if (current.parentNode.nodeName=='svg'){

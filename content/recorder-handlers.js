@@ -685,7 +685,7 @@ Recorder.addEventHandler('editContent', 'blur', function(event) {
         if (event.target == getEle) {
             if (getEle.innerHTML != contentTest) {
                 console.log(getEle.innerHTML);
-                this.record("type", this.locatorBuilders.buildAll(event.target), getEle.innerHTML);
+                this.record("editContent", this.locatorBuilders.buildAll(event.target), getEle.innerHTML);
             }
             checkFocus = 0;
         }
