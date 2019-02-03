@@ -39,16 +39,16 @@ Recorder.addEventHandler('type', 'change', function(event) {
                     // © Chen-Chieh Ping, SideeX Team
                     // user press enter key
                     if (enterTarget != null) {
-                        var tempTarget = target.parentElement;
-                        var formChk = tempTarget.tagName.toLowerCase();
-                        while (formChk != 'form' && formChk != 'body') {
-                            tempTarget = tempTarget.parentElement;
-                            formChk = tempTarget.tagName.toLowerCase();
-                        }
-                        //GAT-5264
-                        if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
-                            this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",_evtType);
-                        } else
+                        // var tempTarget = target.parentElement;
+                        // var formChk = tempTarget.tagName.toLowerCase();
+                        // while (formChk != 'form' && formChk != 'body') {
+                        //     tempTarget = tempTarget.parentElement;
+                        //     formChk = tempTarget.tagName.toLowerCase();
+                        // }
+                        // //GAT-5264
+                        // if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                        //     this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",_evtType);
+                        // } else
                             this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}",_evtType);
                         enterTarget = null;
                     }
@@ -250,14 +250,14 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
                     enterTarget = null;
                     preventType = true;
                 } else if (focusValue == enterTarget.value) {
-                    while (formChk != 'form' && formChk != 'body') {
-                        tempTarget = tempTarget.parentElement;
-                        formChk = tempTarget.tagName.toLowerCase();
-                    }
-                    //GAT-5264
-                    if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
-                        this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",'keydown');
-                    } else
+                    // while (formChk != 'form' && formChk != 'body') {
+                    //     tempTarget = tempTarget.parentElement;
+                    //     formChk = tempTarget.tagName.toLowerCase();
+                    // }
+                    // //GAT-5264
+                    // if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                    //     this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",'keydown');
+                    // } else
                         this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}",'keydown');
                     enterTarget = null;
                 }
@@ -271,24 +271,24 @@ Recorder.addEventHandler('sendKeys', 'keydown', function(event) {
 
                                 // © Chen-Chieh Ping, SideeX Team
                                 if (enterTarget != null) {
-                                    var tempTarget = typeTarget.parentElement;
-                                    var formChk = tempTarget.tagName.toLowerCase();
-                                    while (formChk != 'form' && formChk != 'body') {
-                                        tempTarget = tempTarget.parentElement;
-                                        formChk = tempTarget.tagName.toLowerCase();
-                                    }
-                                    //GAT-5264
-                                    if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
-                                        // if (tempTarget.hasAttribute("id"))
-                                        //     this.record("submit", [
-                                        //         ["id=" + tempTarget.id, "id"]
-                                        //     ], "");
-                                        // else if (tempTarget.hasAttribute("name"))
-                                        //     this.record("submit", [
-                                        //         ["name=" + tempTarget.name, "name"]
-                                        //     ], "");
-                                        this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",'keydown');
-                                    } else
+                                    // var tempTarget = typeTarget.parentElement;
+                                    // var formChk = tempTarget.tagName.toLowerCase();
+                                    // while (formChk != 'form' && formChk != 'body') {
+                                    //     tempTarget = tempTarget.parentElement;
+                                    //     formChk = tempTarget.tagName.toLowerCase();
+                                    // }
+                                    // //GAT-5264
+                                    // if (formChk == 'form' && (!tempTarget.hasAttribute("onsubmit"))) {
+                                    //     // if (tempTarget.hasAttribute("id"))
+                                    //     //     this.record("submit", [
+                                    //     //         ["id=" + tempTarget.id, "id"]
+                                    //     //     ], "");
+                                    //     // else if (tempTarget.hasAttribute("name"))
+                                    //     //     this.record("submit", [
+                                    //     //         ["name=" + tempTarget.name, "name"]
+                                    //     //     ], "");
+                                    //     this.record("submit", this.locatorBuilders.buildAll(tempTarget), "",'keydown');
+                                    // } else
                                         this.record("sendKeys", this.locatorBuilders.buildAll(enterTarget), "${KEY_ENTER}",'keydown');
                                     enterTarget = null;
                                 }

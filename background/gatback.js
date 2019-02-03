@@ -416,8 +416,8 @@ function setStorage(key, val) {
     }
 }
 
-var valueCommands = ["type", "clickAt","check","editContent","dragAndDrop","typeInCodeMirror"];
-
+var valueCommands = ["type", "clickAt","check","dragAndDrop"];
+var typeCommands = ["type","editContent","sendKeys","typeInCodeMirror"]
 function addTopWindow(winInfo) {
     var oneself = -1;
     try {
@@ -558,6 +558,11 @@ function addCommand(msg, auto, insertCommand) {
             "parameters":{},
             "winInfo": msg['winInfo'],
             "optional": false
+        }
+        if (typeCommands.indexOf(command_name) >= 0) {
+            _json["parameters"]['mode'] = command_name;
+            _json['command']='type';
+            command_name="type";
         }
         if (valueCommands.indexOf(command_name) >= 0) {
                 _json["parameters"]['value'] = command_value;
