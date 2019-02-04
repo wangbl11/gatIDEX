@@ -84,7 +84,7 @@ function offsetXY(event) {
         left -= _left;
         element = element.offsetParent;
     } while (element);
-    return left+','+top;
+    return left<0?0:left+','+top<0?0:top;
 }
 
 var EncodeToXhtmlEntity = ["amp", "gt", "lt",  "nbsp","return"];

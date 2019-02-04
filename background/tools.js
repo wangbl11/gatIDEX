@@ -160,10 +160,13 @@ function captureElement(rect) {
         let canvas = document.createElement('canvas');
         let ctx = canvas.getContext('2d');
         let img = new Image();
+        let _truewidth=rect.width<=0?280:rect.width;
+        let _trueheight=rect.height<=0?200:rect.height;
         img.onload = () => {
-          canvas.width = rect.width;
-          canvas.height = rect.height;
-          ctx.drawImage(img, rect.left1?rect.left1:rect.left, rect.top1?rect.top1:rect.top, rect.width, rect.height, 0, 0, rect.width, rect.height);
+          canvas.width = _truewidth;
+          canvas.height = _trueheight;
+          
+          ctx.drawImage(img, rect.left1?rect.left1:rect.left, rect.top1?rect.top1:rect.top, _truewidth, _trueheight, 0, 0, _truewidth, _trueheight);
           resolve(canvas.toDataURL('image/jpeg'));
         };
         img.onerror = e => reject(e);
