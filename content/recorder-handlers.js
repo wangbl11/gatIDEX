@@ -820,6 +820,7 @@ Recorder.addEventHandler('select', 'change', function(event) {
         if ('select' == tagName) {
             if (!event.target.multiple) { //singular
                 var option = event.target.options[event.target.selectedIndex];
+                console.log(option);
                 this.record("select", this.locatorBuilders.buildAll(event.target), this.getOptionLocator(option));
             } else {
                 var options = event.target.options;

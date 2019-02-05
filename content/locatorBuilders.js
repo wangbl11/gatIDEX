@@ -282,7 +282,9 @@ LocatorBuilders.prototype.computeElementAttrs = function(e,el) {
   var ele=e?e:el
   var _json = {};
   if (ele.tagName)
-    _json['tag'] = ele.tagName.toLowerCase();
+  {  
+      _json['tag'] = ele.tagName.toLowerCase();
+  }
   for (let i=0;i<elementsAttrs.length;i++) {
      let one=elementsAttrs[i];
     //console.log(one + ele.getAttribute(one));
