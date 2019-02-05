@@ -205,14 +205,23 @@ class Recorder {
     }
     return _json;
   }
-  record(command, target, value,evtType, insertBeforeLastCommand, actualFrameLocation) {
+  record(command, target, value, evtType, insertBeforeLastCommand, actualFrameLocation) {
     let self = this;
-    console.log(command);
-    console.log(evtType);
+    console.log(value);
+    let _value;
+    if  (Array.isArray(value)&&value.length>0) _value=value[0];
+    else
+    {
+       _value={
+           "value":value
+       }
+    }  
+    console.log(JSON.stringify(_value));
+    
     var _json={
       command: command,
       target: target,
-      value: value,
+      value: _value,
       insertBeforeLastCommand: (insertBeforeLastCommand!=undefined)?insertBeforeLastCommand:false,
       frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
       winInfo: {

@@ -70,21 +70,26 @@ function offsetXY(event) {
     var top = event.pageY,
         left = event.pageX;
     var element = event.target;
-    do {
-        let _top = element.offsetTop;
-        let _left = element.offsetLeft;
-        //this if is added for polygon
-        /*
-        if (_top == undefined || _left == undefined) {
-            top = 0;
-            left = 0;
-            break;
-        }*/
-        top -= _top;
-        left -= _left;
-        element = element.offsetParent;
-    } while (element);
-    return left<0?0:left+','+top<0?0:top;
+    try {
+        do {
+            let _top = element.offsetTop;
+            let _left = element.offsetLeft;
+            //this if is added for polygon
+            /*
+            if (_top == undefined || _left == undefined) {
+                top = 0;
+                left = 0;
+                break;
+            }*/
+            top -= _top;
+            left -= _left;
+            element = element.offsetParent;
+        } while (element);
+        return (left < 0 ? 0 : left) + "," + (top < 0 ? 0 : top);
+    } catch (e) {
+        console.log(e.message);
+    }
+    return "0,0";
 }
 
 var EncodeToXhtmlEntity = ["amp", "gt", "lt",  "nbsp","return"];

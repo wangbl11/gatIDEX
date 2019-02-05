@@ -181,7 +181,8 @@ Recorder.addEventHandler('clickAt', 'click', function (event) {
                 _off=offsetXY(event);
             }
             //var target = event.target;
-            console.log('click at~~~~~~~~~~~');
+            console.log('click at~~~~~~~~~~~ ');
+            console.log(_off)
             this.clickLocator = true;
             this.record("clickAt", this.locatorBuilders.buildAll(_target), _off, 'click');
             //var arrayTest = this.locatorBuilders.buildAll(_target);
@@ -820,8 +821,16 @@ Recorder.addEventHandler('select', 'change', function(event) {
         if ('select' == tagName) {
             if (!event.target.multiple) { //singular
                 var option = event.target.options[event.target.selectedIndex];
-                console.log(option);
-                this.record("select", this.locatorBuilders.buildAll(event.target), this.getOptionLocator(option));
+                let _label=this.getOptionLocator(option);
+                console.log(_label);
+                let _value=option.value;
+                console.log(_value);
+                let _ttt={
+                    "value":_value,
+                    "label":_label
+                }
+                console.log(typeof _ttt);
+                this.record("select", this.locatorBuilders.buildAll(event.target), [_ttt],"select",false);
             } else {
                 var options = event.target.options;
                 for (var i = 0; i < options.length; i++) {

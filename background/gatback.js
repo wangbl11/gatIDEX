@@ -555,7 +555,7 @@ function addCommand(msg, auto, insertCommand) {
             },
             "elementAttributes": command_target_array && command_target_array.length > 1 ? command_target_array[1] : {},
             "coordinates": command_target_array && command_target_array.length > 2 ? command_target_array[2] : {},
-            "parameters":{},
+            "parameters":command_value,
             "winInfo": msg['winInfo'],
             "optional": false
         }
@@ -564,9 +564,9 @@ function addCommand(msg, auto, insertCommand) {
             _json['command']='type';
             command_name="type";
         }
-        if (valueCommands.indexOf(command_name) >= 0) {
-                _json["parameters"]['value'] = command_value;
-        }
+        // if (valueCommands.indexOf(command_name) >= 0) {
+        //         _json["parameters"]['value'] = command_value;
+        // }
         //if (_json['command']!='typeInCodeMirror')
          _json["locators"]["genericLocator"]=command_target_array && command_target_array.length > 3 ? command_target_array[3] : {}
 
@@ -599,7 +599,7 @@ function addCommand(msg, auto, insertCommand) {
             console.log(msg['evtType']);
             let parm={};
             parm["dragType"]="slider";
-            parm['value']=command_value;
+            //parm['value']=command_value;
 
         }
     }
