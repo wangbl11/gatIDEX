@@ -137,7 +137,7 @@ LocatorBuilders.prototype.lastConfirm = function(
     //console.log(finderName);
     //console.log(locator);
     var fe = this.findElement(locator);
-    //console.log(e == fe);
+    //if (_category == "link") console.log(e == fe);
 
     if (
       e == fe ||
@@ -311,7 +311,7 @@ LocatorBuilders.prototype.buildAll = function(el) {
   return locators;
 };
 
-var elementsAttrs = ["placeholder", "type"];
+var elementsAttrs = ["placeholder", "type", "title"];
 LocatorBuilders.prototype.computeElementAttrs = function(e, el) {
   var ele = e ? e : el;
   var _json = {};
@@ -1392,20 +1392,22 @@ LocatorBuilders.add(
     if (e.nodeName == null) return null;
     var _nodeName = e.nodeName.toLowerCase();
     if (_nodeName == "a") {
-      if (e.hasAttribute && e.hasAttribute("title")) {
-        var title =
-          "//a[@title=" + this.attributeValue(e.getAttribute("title")) + "]";
-        var txt = this.preciseXPath(title, e);
-        return txt;
-      }
+      //   if (e.hasAttribute && e.hasAttribute("title")) {
+      //     var title =
+      //       "//a[@title=" + this.attributeValue(e.getAttribute("title")) + "]";
+      //     var txt = this.preciseXPath(title, e);
+      //     return txt;
+      //   }
       var text = e.textContent;
+      console.log(text);
       if (!text.match(/^\s*$/)) {
-        return (
+        text =
           "link=" +
           exactMatchPattern(
             text.replace(/\xA0/g, " ").replace(/^\s*(.*?)\s*$/, "$1")
-          )
-        );
+          );
+        console.log(text);
+        return text;
       }
     }
     return null;

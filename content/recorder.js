@@ -16,27 +16,41 @@
  */
 
 class Recorder {
-
   constructor(window) {
     this.window = window;
     this.recordingIdx = -1;
     this.attached = false;
     this.locatorBuilders = new LocatorBuilders(window);
     this.frameLocation = this.getFrameLocation();
-    this.lastSlideValue=[0,0];
+    this.lastSlideValue = [0, 0];
     try {
-      if (window != window.top && window.frameElement) {
-        let _temp = this.getFrameLocation1();
-        console.log(JSON.stringify(_temp));
-        this.locators=_temp&&_temp.length>0?_temp[0]:[];
-        this.positions=_temp&&_temp.length>1?_temp[1]:[];
+      console.log(window.frameElement);
+      console.log(window != window.top);
+      if (window != window.top) {
+        if (window.frameElement) {
+          let _temp = this.getFrameLocation1();
+          console.log(JSON.stringify(_temp));
+          this.locators = _temp && _temp.length > 0 ? _temp[0] : [];
+          this.positions = _temp && _temp.length > 1 ? _temp[1] : [];
+        } else {
+          //not same origin
+          console.log(this.frameLocation);
+          if (this.frameLocation && this.frameLocation.length > 0) {
+            let _idx = this.frameLocation.indexOf(":");
+            let _first = this.frameLocation;
+            if (_idx > 0) _first = this.frameLocation.substring(_idx);
+            this.locators = [
+              { finder: "xpath", value: ["(//iframe)[" + _first + "]"] }
+            ];
+          }
+        }
       }
     } catch (e) {
       console.log(e.message);
     }
-    console.log('finish construct Recorder....')
+    console.log("finish construct Recorder....");
   }
-  
+
   // This part of code is copyright by Software Freedom Conservancy(SFC)
   parseEventKey(eventKey) {
     if (eventKey.match(/^C_/)) {
@@ -72,11 +86,11 @@ class Recorder {
           for (var i = 0; i < handlers.length; i++) {
             handlers[i].call(self, event);
           }
-        }
+        };
         this.window.document.addEventListener(eventName, listener, capture);
         this.window.onpopstate = function(event) {
-            //when user click goback
-            console.log('onpopstate~~~~~~~user click goback~~~~~~~~~~~');
+          //when user click goback
+          console.log("onpopstate~~~~~~~user click goback~~~~~~~~~~~");
         };
         this.eventListeners[eventKey] = listener;
       }
@@ -94,7 +108,11 @@ class Recorder {
       var eventInfo = this.parseEventKey(eventKey);
       var eventName = eventInfo.eventName;
       var capture = eventInfo.capture;
-      this.window.document.removeEventListener(eventName, this.eventListeners[eventKey], capture);
+      this.window.document.removeEventListener(
+        eventName,
+        this.eventListeners[eventKey],
+        capture
+      );
     }
     delete this.eventListeners;
   }
@@ -102,63 +120,80 @@ class Recorder {
   getFrameLocation() {
     let currentWindow = window;
     let currentParentWindow;
-    let frameLocation = ""
+    let frameLocation = "";
     while (currentWindow !== window.top) {
+      console.log(currentWindow.location);
       currentParentWindow = currentWindow.parent;
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
-          frameLocation = ":" + idx + frameLocation;
+          frameLocation = ":" + (idx + 1) + frameLocation;
           currentWindow = currentParentWindow;
           break;
         }
     }
     //return frameLocation = "0" + frameLocation;
-    return frameLocation.length == 0 ? frameLocation : frameLocation.substring(1);
+    return frameLocation.length == 0
+      ? frameLocation
+      : frameLocation.substring(1);
+  }
+
+  getCrossDomainFrames(locs) {
+    let _ret = [];
+    if (!(locs && locs.length > 0)) return _ret;
+
+    let ss = locs.split(":");
+    for (let i = ss.length - 1; i >= 0; i--) {
+      let _one = {};
+      _ret.push(_one);
+    }
+    return _ret;
   }
 
   getFrameLocation1() {
+    console.log("get frame information");
     let currentWindow = window;
     let currentParentWindow;
-    let frameLocation = ""
-    let _frames=[];
-    let _positions=[];
+    let frameLocation = "";
+    let _frames = [];
+    let _positions = [];
     while (currentWindow !== window.top) {
-      let currentNode=currentWindow.frameElement;
-      if (currentNode==null) break;
-      let currentNodeName=currentNode.nodeName?currentNode.nodeName.toLowerCase():"*";
+      let currentNode = currentWindow.frameElement;
+      //null if the element is either top-level or is embedded into a document with a different script origin; that is, in cross-origin situations.
+      if (currentNode == null) break;
+      let currentNodeName = currentNode.nodeName
+        ? currentNode.nodeName.toLowerCase()
+        : "*";
       currentParentWindow = currentWindow.parent;
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
-          frameLocation = "/"+currentNodeName+"[" + (idx+1) +"]"+ frameLocation;
-          
+          frameLocation =
+            "/" + currentNodeName + "[" + (idx + 1) + "]" + frameLocation;
+
           /////loop to its ancestor//////////////////////////////////
-          this.locatorBuilders.window=currentParentWindow;
-          this.locatorBuilders.doc=currentParentWindow.document;
-          let _ret=this.locatorBuilders.buildAll(currentWindow.frameElement);
-          let _frame={
-             "locators":[]
+          this.locatorBuilders.window = currentParentWindow;
+          this.locatorBuilders.doc = currentParentWindow.document;
+          let _ret = this.locatorBuilders.buildAll(currentWindow.frameElement);
+          let _frame = {
+            locators: []
+          };
+          if (_ret && _ret.length > 0) {
+            _frame["locators"] = _ret[0];
           }
-          if (_ret&&_ret.length>0){
-             _frame['locators']=_ret[0];
+          if (_frames.length == 0) {
+            _frames.push(_frame);
+            _positions.push(_ret && _ret.length > 1 ? _ret[1] : {});
+          } else {
+            _frames.unshift(_frame);
+            _positions.unshift(_ret && _ret.length > 1 ? _ret[1] : {});
           }
-          if (_frames.length==0)
-          {   
-              _frames.push(_frame);
-              _positions.push(_ret&&_ret.length>1?_ret[1]:{});
-          }
-          else
-          {
-              _frames.unshift(_frame);
-              _positions.unshift(_ret&&_ret.length>1?_ret[1]:{});
-          }
-            /////////////////////////////////////////
+          /////////////////////////////////////////
 
           currentWindow = currentParentWindow;
           break;
         }
     }
     this.locatorBuilders.reset(this.window);
-    return [_frames,_positions];
+    return [_frames, _positions];
     //return frameLocation.length == 0 ? frameLocation : "/"+frameLocation;
   }
 
@@ -179,65 +214,75 @@ class Recorder {
         let _frame = currentParentWindow.frames[idx];
 
         if (_lastone && _frame === currentWindow) {
-          children.push(_lastone)
+          children.push(_lastone);
         } else {
           children.push({
-            "name": _frame.name
+            name: _frame.name
           });
         }
       }
-      father["name"] = currentParentWindow.name,
-        father["frames"] = children;
+      (father["name"] = currentParentWindow.name),
+        (father["frames"] = children);
     }
 
     return father.name ? [father] : [];
   }
 
-  getWinInfo(){
-    let _json={
-        type: (this.window == this.window.top)? "top" : "frame",
-        title: this.window.document.title
+  getWinInfo() {
+    let _json = {
+      type: this.window == this.window.top ? "top" : "frame",
+      title: this.window.document.title
     };
-    if (this.window != this.window.top){
-        _json['frameLocators']=this.locators?this.locators:[];
-        _json['framePositions']=this.positions?this.positions:[];
-        console.log(JSON.stringify(_json['framePositions']));
+    if (this.window != this.window.top) {
+      _json["frameLocators"] = this.locators ? this.locators : [];
+      _json["framePositions"] = this.positions ? this.positions : [];
+      console.log(JSON.stringify(_json["framePositions"]));
     }
     return _json;
   }
-  record(command, target, value, evtType, insertBeforeLastCommand, actualFrameLocation) {
+  record(
+    command,
+    target,
+    value,
+    evtType,
+    insertBeforeLastCommand,
+    actualFrameLocation
+  ) {
     let self = this;
     console.log(value);
     let _value;
-    if  (Array.isArray(value)&&value.length>0) _value=value[0];
-    else
-    {
-       _value={
-           "value":value
-       }
-    }  
+    if (Array.isArray(value) && value.length > 0) _value = value[0];
+    else {
+      _value = {
+        value: value
+      };
+    }
     console.log(JSON.stringify(_value));
-    
-    var _json={
+
+    var _json = {
       command: command,
       target: target,
       value: _value,
-      insertBeforeLastCommand: (insertBeforeLastCommand!=undefined)?insertBeforeLastCommand:false,
-      frameLocation: (actualFrameLocation != undefined) ? actualFrameLocation : this.frameLocation,
+      insertBeforeLastCommand:
+        insertBeforeLastCommand != undefined ? insertBeforeLastCommand : false,
+      frameLocation:
+        actualFrameLocation != undefined
+          ? actualFrameLocation
+          : this.frameLocation,
       winInfo: {
-          type: (this.window == this.window.top)? "top" : "frame",
-          title: this.window.document.title
+        type: this.window == this.window.top ? "top" : "frame",
+        title: this.window.document.title
       },
-      evtType:(evtType==undefined)?'':evtType
+      evtType: evtType == undefined ? "" : evtType
     };
-    if (this.window != this.window.top){
-        _json['winInfo']['frameLocators']=this.locators?this.locators:[];
-        _json['winInfo']['framePositions']=this.positions?this.positions:[];
+    if (this.window != this.window.top) {
+      _json["winInfo"]["frameLocators"] = this.locators ? this.locators : [];
+      _json["winInfo"]["framePositions"] = this.positions ? this.positions : [];
     }
-    
+
     browser.runtime.sendMessage(_json).catch(function(reason) {
-        // If receiving end does not exist, detach the recorder
-        self.detach();
+      // If receiving end does not exist, detach the recorder
+      self.detach();
     });
   }
 }
@@ -246,12 +291,12 @@ Recorder.eventHandlers = {};
 Recorder.addEventHandler = function(handlerName, eventName, handler, options) {
   handler.handlerName = handlerName;
   if (!options) options = false;
-  let key = options ? ('C_' + eventName) : eventName;
+  let key = options ? "C_" + eventName : eventName;
   if (!this.eventHandlers[key]) {
     this.eventHandlers[key] = [];
   }
   this.eventHandlers[key].push(handler);
-}
+};
 
 // TODO: move to appropriate file
 // show element

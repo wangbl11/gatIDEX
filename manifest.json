@@ -1,64 +1,89 @@
 {
-    "description": "Oracle Globalization Automation Technology - Recording IDE",
-    "manifest_version": 2,
-    "name": "GatIDEX",
-    "version": "1.0.24",
-    "homepage_url": "https://github.com/wangbl11/gatIDEX",
-    "options_ui": {
-        "page": "panel/options.html",
-        "browser_style": true,
-        "open_in_tab":true
-    },
-    "icons":
+  "description": "Oracle Globalization Automation Technology - Recording IDE",
+  "manifest_version": 2,
+  "name": "GatIDEX",
+  "version": "1.0.25",
+  "homepage_url": "https://github.com/wangbl11/gatIDEX",
+  "options_ui": {
+    "page": "panel/options.html",
+    "browser_style": true,
+    "open_in_tab": true
+  },
+  "icons": {
+    "48": "icons/icons-48.png",
+    "96": "icons/icons-96.png"
+  },
+
+  "permissions": [
+    "<all_urls>",
+    "tabs",
+    "activeTab",
+    "webRequest",
+    "contextMenus",
+    "downloads",
+    "webNavigation",
+    "notifications",
+    "storage"
+  ],
+
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+
+  "content_scripts": [
     {
-        "48": "icons/icons-48.png",
-        "96": "icons/icons-96.png"
+      "matches": ["<all_urls>"],
+      "js": [
+        "content/xhtml-entities.js",
+        "content/atoms.js",
+        "content/utils.js",
+        "content/tools.js",
+        "content/selenium-browserbot.js",
+        "common/escape.js",
+        "content/selenium-api.js",
+        "content/genericLocators.js",
+        "content/locatorBuilders.js",
+        "content/recorder.js",
+        "content/recorder-handlers.js",
+        "content/gatide.js",
+        "content/targetSelecter.js",
+        "content/command-receiver.js",
+        "content/sizzle.js"
+      ],
+      "match_about_blank": false,
+      "all_frames": true
     },
-
-    "permissions": [
-        "<all_urls>",
-        "tabs",
-        "activeTab",
-        "webRequest",
-        "contextMenus",
-        "downloads",
-        "webNavigation",
-        "notifications",
-        "storage"
-    ],
-
-    "content_security_policy": "script-src 'self'; object-src 'self'",
-
-    "content_scripts": [
-        {
-            "matches": ["<all_urls>"],
-            "js": ["content/xhtml-entities.js","content/atoms.js", "content/utils.js","content/tools.js", "content/selenium-browserbot.js",
-                   "common/escape.js", "content/selenium-api.js", "content/genericLocators.js","content/locatorBuilders.js",
-                   "content/recorder.js", "content/recorder-handlers.js","content/gatide.js", "content/targetSelecter.js",
-                   "content/command-receiver.js", "content/sizzle.js"],
-            "match_about_blank": false,
-            "all_frames": true
-        },
-        {
-            "matches": ["<all_urls>"],
-            "js": ["common/browser-polyfill.js", "content/prompt-injecter.js", "content/runScript-injecter.js"],
-            "match_about_blank": false,
-            "all_frames": true,
-            "run_at": "document_start"
-        }
-    ],
-
-    "background":
     {
-        "scripts": ["common/uuid.js","background/tools.js","background/displayName.js","common/browser-polyfill.js", "background/background.js","common/sockjs.min.js","common/stomp.min.js",
-        "panel/js/background/recorder.js","deps/idb-file-storage.js","panel/js/background/window-controller.js","background/gatback.js"]
-    },
+      "matches": ["<all_urls>"],
+      "js": [
+        "common/browser-polyfill.js",
+        "content/prompt-injecter.js",
+        "content/runScript-injecter.js"
+      ],
+      "match_about_blank": false,
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ],
 
-    "browser_action":
-    {
-        "default_icon": "icons/icons-48.png",
-        "default_title": "GAT IDE"
-    },
+  "background": {
+    "scripts": [
+      "common/uuid.js",
+      "background/tools.js",
+      "background/displayName.js",
+      "common/browser-polyfill.js",
+      "background/background.js",
+      "common/sockjs.min.js",
+      "common/stomp.min.js",
+      "panel/js/background/recorder.js",
+      "deps/idb-file-storage.js",
+      "panel/js/background/window-controller.js",
+      "background/gatback.js"
+    ]
+  },
 
-    "web_accessible_resources": ["page/prompt.js", "page/runScript.js"]
+  "browser_action": {
+    "default_icon": "icons/icons-48.png",
+    "default_title": "GAT IDE"
+  },
+
+  "web_accessible_resources": ["page/prompt.js", "page/runScript.js"]
 }
