@@ -352,14 +352,14 @@ function emitMessageToConsole(_type, _json) {
       if (steps.length > 0) {
         let _elapse = Math.round((_tempnow - lastStepMillisecond) / 2000);
         if (_elapse > 5) {
-          stepsCount++;
-          let _wait = { command: "wait", parameters: { value: _elapse } };
-          steps.push(_wait);
-          stompClient.send(
-            chatRoomId,
-            {},
-            JSON.stringify({ sender: "ide", type: _type, content: _wait })
-          );
+          // stepsCount++;
+          // let _wait = { command: "pause", parameters: { wait: _elapse } };
+          // steps.push(_wait);
+          // stompClient.send(
+          //   chatRoomId,
+          //   {},
+          //   JSON.stringify({ sender: "ide", type: _type, content: _wait })
+          // );
         } else {
           _sleepBefore = _elapse;
         }
@@ -482,74 +482,6 @@ function addTopWindow(winInfo) {
   }
   return -1;
 }
-/*
-function addWindow(winInfo) {
-  var father=-1;
-  var oneself = -1;
-  try {
-    //check whether duplicate
-    console.log(winInfo)
-    if (winInfo.type == 'frame') {
-      winInfo['frame_locators']=winInfo['locators'];
-      winInfo['locators']=[];
-      for (var i = 0; i < recordingWindows.length; i++) {
-        let _one = recordingWindows[i];
-        if (_one.type == 'top'&&_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-          father = i;
-          break;
-        }
-      }
-      if (father>-1) {
-        winInfo.topWindowIdx = father;
-      }
-      else{
-         //if no top winodow is found, create one for this top, then adjust topWindowIdx of its descendants
-         //whether we should cache it
-         let _winone={
-            "tabId":winInfo.tabId,
-            "windowId":winInfo.windowId,
-            "url":winInfo.topWindowUrl,
-            "origin":"",
-            "type":"top",
-            "topWindowIdx":-1,
-            "frameLocation":""
-         };
-         recordingWindows.push(_winone);
-         console.log('new top window');
-         emitMessageToConsole('WINDOW',_winone);
-         winInfo.topWindowIdx =recordingWindows.length-1;
-      }
-    }
-
-    for (var i = 0; i < recordingWindows.length; i++) {
-      let _one = recordingWindows[i];
-      if (_one.tabId == winInfo.tabId && _one.windowId == winInfo.windowId) {
-        if (winInfo.type == 'top' || (winInfo.type == 'frame' && _one.frameLocation == winInfo.frameLocation)) {
-          if (_one["origin"].length==0)
-            _one["origin"]=winInfo["origin"];
-          oneself = i;
-          return i;
-        }
-      } 
-    }
-
-    delete winInfo['topWindowUrl'];
-    recordingWindows.push(winInfo);
-    console.log('emit '+winInfo.type);
-    emitMessageToConsole('WINDOW',winInfo);
-    if (winInfo['type']=='top')
-      addCommandAuto("open", [
-        [{ "finder": "url", "values": [winInfo['url']] }]
-        ], winInfo['url']);
-    oneself = recordingWindows.length - 1;
-    return oneself;
-
-  } catch (err) {
-    console.log(err.message);
-  }
-  return -1;
-}
-*/
 
 function addCommand(msg, auto, insertCommand) {
   if (!isRecording && steps.length > 0) return;

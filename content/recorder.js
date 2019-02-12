@@ -21,7 +21,7 @@ class Recorder {
     this.recordingIdx = -1;
     this.attached = false;
     this.locatorBuilders = new LocatorBuilders(window);
-    this.frameLocation = this.getFrameLocation();
+
     this.lastSlideValue = [0, 0];
     try {
       console.log(window.frameElement);
@@ -34,15 +34,9 @@ class Recorder {
           this.positions = _temp && _temp.length > 1 ? _temp[1] : [];
         } else {
           //not same origin
-          console.log(this.frameLocation);
-          if (this.frameLocation && this.frameLocation.length > 0) {
-            let _idx = this.frameLocation.indexOf(":");
-            let _first = this.frameLocation;
-            if (_idx > 0) _first = this.frameLocation.substring(_idx);
-            this.locators = [
-              { finder: "xpath", value: ["(//iframe)[" + _first + "]"] }
-            ];
-          }
+          let _temp = this.getFrameLocation();
+          this.locators = _temp;
+          console.log(JSON.stringify(_temp));
         }
       }
     } catch (e) {
@@ -121,20 +115,36 @@ class Recorder {
     let currentWindow = window;
     let currentParentWindow;
     let frameLocation = "";
+    let _ret = [];
     while (currentWindow !== window.top) {
-      console.log(currentWindow.location);
+      console.log(JSON.stringify(currentWindow.location));
       currentParentWindow = currentWindow.parent;
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
-          frameLocation = ":" + (idx + 1) + frameLocation;
-          currentWindow = currentParentWindow;
-          break;
+          let _idx = idx + 1;
+          frameLocation = ":" + _idx + frameLocation;
+          let _found = true;
+          //   let _found = currentParentWindow.document.querySelector(
+          //     "iframe:nth-child(" + _idx + ")"
+          //   );
+          if (_found) {
+            if (_found.contentWindow == currentWindow) {
+              let _finder = "(//iframe)[" + _idx + "]";
+              currentWindow = currentParentWindow;
+              _ret.push({
+                locators: [
+                  {
+                    finder: "xpath",
+                    value: [_finder]
+                  }
+                ]
+              });
+              break;
+            }
+          }
         }
     }
-    //return frameLocation = "0" + frameLocation;
-    return frameLocation.length == 0
-      ? frameLocation
-      : frameLocation.substring(1);
+    return _ret;
   }
 
   getCrossDomainFrames(locs) {
@@ -265,10 +275,6 @@ class Recorder {
       value: _value,
       insertBeforeLastCommand:
         insertBeforeLastCommand != undefined ? insertBeforeLastCommand : false,
-      frameLocation:
-        actualFrameLocation != undefined
-          ? actualFrameLocation
-          : this.frameLocation,
       winInfo: {
         type: this.window == this.window.top ? "top" : "frame",
         title: this.window.document.title
