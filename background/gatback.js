@@ -349,17 +349,20 @@ function emitMessageToConsole(_type, _json) {
     let _tempnow = Date.now();
     console.log(_tempnow);
     try {
+      let delayForPause = false;
       if (steps.length > 0) {
         let _elapse = Math.round((_tempnow - lastStepMillisecond) / 2000);
         if (_elapse > 5) {
-          // stepsCount++;
-          // let _wait = { command: "pause", parameters: { wait: _elapse } };
-          // steps.push(_wait);
-          // stompClient.send(
-          //   chatRoomId,
-          //   {},
-          //   JSON.stringify({ sender: "ide", type: _type, content: _wait })
-          // );
+          stepsCount++;
+          let _wait = { command: "pause", parameters: { wait: _elapse } };
+          compositeDisplayName(_wait);
+          steps.push(_wait);
+          stompClient.send(
+            chatRoomId,
+            {},
+            JSON.stringify({ sender: "ide", type: _type, content: _wait })
+          );
+          delayForPause = true;
         } else {
           _sleepBefore = _elapse;
         }
@@ -370,14 +373,19 @@ function emitMessageToConsole(_type, _json) {
         }
       }
       lastStepMillisecond = _tempnow;
+      if (_json["command"] == "check" || _json["command"] == "mouseOver")
+        Sleep.wait(1000);
       stompClient.send(
         chatRoomId,
         {},
         JSON.stringify({ sender: "ide", type: _type, content: _json })
       );
+      delayForPause = false;
     } catch (err) {
       console.log(err.message);
     }
+
+    //cache steps for further used, eg: websocket down then resume
     stepsCount++;
     steps.push(_json);
   } catch (e) {
@@ -404,7 +412,7 @@ function getStorage() {
       if (!gat_socket_server) {
         //gat_socket_server = 'http://slc00blb.us.oracle.com:8080/ws';
         console.log("not specify gat_socket_server");
-        gat_socket_server = "ws://rws3510112.us.oracle.com:30010/html5";
+        gat_socket_server = "ws://slc09xqr.us.oracle.com:30010/html5";
       }
 
       console.log(gat_socket_server);

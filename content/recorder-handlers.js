@@ -968,6 +968,7 @@ Recorder.prototype.getOptionLocator = function(option) {
 };
 
 //gat-2818 (record the click on the span of ojSelect
+//this method can be deprecated because it can be replaced with closet method directly
 Recorder.prototype.isOjectListExpand = function(e, tagName, parentNode) {
   if (tagName == "span") {
     var _parentNode = e.parentNode;
@@ -1024,14 +1025,13 @@ Recorder.prototype.findClickableElement = function(e) {
     return e;
   }
 
-  //need upstream to its component level tag??
-  let _switch = e.closest(".oj-switch");
-  if (_switch) return e;
+  //find upstream abstract component
+  for (let m = 0; m < expandableArray.length; m++) {
+    let _switch = e.closest(expandableArray[m]);
+    if (_switch) return e;
+  }
 
-  //console.log('ojetlist...');
   if (e.parentNode != null) {
-    var _isSelect = this.isOjectListExpand(e, tagName, e.parentNode);
-    if (_isSelect) return e;
     return this.findClickableElement(e.parentNode);
   } else {
     return null;
