@@ -1,5 +1,6 @@
 var svgArray = ["path", "circle", "svg", "g", "rect", "text"];
 var expandableArray = [".oj-switch", "[role='combobox']"];
+
 function inputInExpand(elm) {
   var cls = elm.getAttribute("class");
   if (

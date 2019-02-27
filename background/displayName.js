@@ -28,6 +28,7 @@ function compositeDisplayName(json) {
       break;
     case "pause":
       json["display"] = `pause ${parm.wait} seconds`;
+      break;
     default:
       json["display"] = command;
   }

@@ -251,6 +251,11 @@ function ignoreLastStep(_last, _json) {
   let _ignore = false;
   return _ignore;
 }
+
+const sleepNew = milliseconds => {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+};
+
 function emitMessageToConsole(_type, _json) {
   try {
     //if not in recording mode, ignore all messages
@@ -373,13 +378,21 @@ function emitMessageToConsole(_type, _json) {
         }
       }
       lastStepMillisecond = _tempnow;
-      if (_json["command"] == "check" || _json["command"] == "mouseOver")
-        Sleep.wait(1000);
-      stompClient.send(
-        chatRoomId,
-        {},
-        JSON.stringify({ sender: "ide", type: _type, content: _json })
-      );
+      if (_json["command"] == "check" || _json["command"] == "mouseOver") {
+        sleepNew(1000).then(() => {
+          stompClient.send(
+            chatRoomId,
+            {},
+            JSON.stringify({ sender: "ide", type: _type, content: _json })
+          );
+        });
+      } else {
+        stompClient.send(
+          chatRoomId,
+          {},
+          JSON.stringify({ sender: "ide", type: _type, content: _json })
+        );
+      }
       delayForPause = false;
     } catch (err) {
       console.log(err.message);
@@ -442,7 +455,7 @@ function setStorage(key, val) {
 }
 
 var valueCommands = ["type", "clickAt", "check", "dragAndDrop", "select"];
-var typeCommands = ["type", "editContent", "sendKeys", "typeInCodeMirror"];
+var typeCommands = ["type", "sendKeys", "editContent", "typeInCodeMirror"];
 
 function addTopWindow(winInfo) {
   var oneself = -1;
@@ -527,8 +540,9 @@ function addCommand(msg, auto, insertCommand) {
       winInfo: msg["winInfo"],
       optional: false
     };
-    if (typeCommands.indexOf(command_name) >= 0) {
-      _json["parameters"]["mode"] = command_name;
+    let idx = typeCommands.indexOf(command_name);
+    if (idx >= 0) {
+      if (idx > 1) _json["parameters"]["mode"] = command_name;
       _json["command"] = "type";
       command_name = "type";
     }
