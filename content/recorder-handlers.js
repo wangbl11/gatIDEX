@@ -486,6 +486,14 @@ Recorder.addEventHandler(
         this.lastSlideValue[1] = event.clientY;
         return;
       }
+
+      const _draggable = target.closest("draggable");
+      if (_draggable) {
+        console.log(">>> have draggable");
+        this._lastDrag = this.locatorBuilders.buildAll(target);
+        return;
+      }
+
       if ("option" == tagName) {
         var parent = event.target.parentNode;
         if (parent.multiple) {
@@ -511,6 +519,7 @@ Recorder.addEventHandler(
     // if (!clickable) return;
 
     if (this.selectMousedown) {
+      console.log("1");
       var x = event.clientX - this.selectMousedown.clientX;
       var y = event.clientY - this.selectMousedown.clientY;
 
@@ -561,9 +570,22 @@ Recorder.addEventHandler(
         delete this.mouseoverQ;
         return;
       }
-      console.log(
-        this.mouseoverQ ? "over: " + this.mouseoverQ.length : "undefined"
-      );
+
+      const _droppable = e.closest("droppable");
+      if (_droppable && this._lastDrag) {
+        console.log(">>> have droppable");
+        this.record(
+          "dragAndDrop",
+          this._lastDrag,
+          this.locatorBuilders.buildAll(e),
+          "dragAndDropObject"
+        );
+        delete this._lastDrag;
+        this._lastDrag = null;
+      } else
+        console.log(
+          this.mouseoverQ ? "over: " + this.mouseoverQ.length : "undefined"
+        );
       /* disable for drag/drop mouse wheel; it only check offset of mousedown and mouseup
         // it does not check whether the target itself offset change
         if (this.selectMousedown && event.button === 0 && (x + y) && (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) && getSelectionText() === '') {
@@ -587,6 +609,7 @@ Recorder.addEventHandler(
         }
         */
     } else {
+      console.log("2");
       delete this.clickLocator;
       delete this.mouseup;
       var x = event.clientX - this.mousedown.clientX;
@@ -608,6 +631,7 @@ Recorder.addEventHandler(
             offsetXY(this.mousedown)
           );
         } else {
+          console.log("3");
           this.record(
             "mouseDown",
             this.locatorBuilders.buildAll(this.mousedown.target),

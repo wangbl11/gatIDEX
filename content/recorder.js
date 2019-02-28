@@ -261,7 +261,7 @@ class Recorder {
     let self = this;
     console.log(value);
     let _value;
-    if (Array.isArray(value) && value.length > 0) _value = value[0];
+    if (Array.isArray(value) && value.length > 0) _value = value;
     else {
       _value = {
         value: value

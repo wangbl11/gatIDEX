@@ -283,8 +283,13 @@ function emitMessageToConsole(_type, _json) {
     }
     console.log(2);
     //workaround for gat-5395
+
     if (stepsCount > 0) {
       console.log(3);
+      if (_json["command"] == "open") {
+        return;
+      }
+
       let _lastCmd = steps[steps.length - 1];
       if (
         _lastCmd["command"] == "type" &&
@@ -301,51 +306,6 @@ function emitMessageToConsole(_type, _json) {
         )
           return;
       }
-
-      // if (_defer == true&&_lastCmd['command'] == 'clickAt' && _json['command'] == 'type' && _json['elementAttributes']&&_lastCmd['elementAttributes']) {
-      //     //judge whether they are same objects
-      //     let _tag1 = _lastCmd['elementAttributes']['tag'];
-      //     let _tag = _json['elementAttributes']['tag'];
-      //     if (_tag == 'input' && _tag1 == 'input') {
-      //         let _type1 = _lastCmd['elementAttributes']['type'];
-      //         let _type = _json['elementAttributes']['type'];
-      //         if (_type == 'text' && _type1 == 'text') {
-      //             let _locators = _lastCmd['locators']['seleniumLocators'];
-      //             let _locators1 = _json['locators']['seleniumLocators'];
-      //             if (_locators.length > 0 && _locators1.length > 0 && JSON.stringify(_locators[0]) == JSON.stringify(_locators1[0])){
-      //                //don't need send last command
-      //                console.log('type in input[text]');
-      //                _defer = false;
-      //             }
-      //         }
-      //     }
-      // }
-      // if (_defer) {
-      //     console.log('send defer')
-      //     try {
-      //         stompClient.send(chatRoomId,
-      //             {},
-      //             JSON.stringify({ sender: 'ide', type: _type, content: _lastCmd })
-      //         );
-      //     } catch (err) {
-      //         console.log(err.message);
-      //     }
-      //     _defer = false;
-      // }
-      //input defer emit
-      // if (_json['command'] == 'clickAt' && _json['elementAttributes']) {
-
-      //     let _tag = _json['elementAttributes']['tag'];
-      //     if (_tag == 'input') {
-      //         let _type = _json['elementAttributes']['type'];
-      //         if (_type && _type == 'text') {
-      //             console.log('defer click on input[text]')
-      //             _defer = true;
-      //             steps.push(_json);
-      //             return;
-      //         }
-      //     }
-      // }
       console.log(_defer);
       console.log(_lastCmd);
     }
@@ -481,17 +441,6 @@ function addTopWindow(winInfo) {
         parameters: {
           url: winInfo["url"],
           sleepBefore: 0
-          // "parametrize":[
-          //   {
-          //     "enabled": true,
-          //     "name": "urlParam",
-          //     "ref": "url",
-          //     "randomize": {
-          //       "enabled": true,
-          //       "type": "url"
-          //      }
-          //    }
-          // ]
         }
       };
       addCommandAuto(_open);
@@ -536,7 +485,7 @@ function addCommand(msg, auto, insertCommand) {
         command_target_array && command_target_array.length > 2
           ? command_target_array[2]
           : {},
-      parameters: command_value,
+      parameters: Array.isArray(command_value) ? {} : command_value,
       winInfo: msg["winInfo"],
       optional: false
     };
@@ -546,10 +495,7 @@ function addCommand(msg, auto, insertCommand) {
       _json["command"] = "type";
       command_name = "type";
     }
-    // if (valueCommands.indexOf(command_name) >= 0) {
-    //         _json["parameters"]['value'] = command_value;
-    // }
-    //if (_json['command']!='typeInCodeMirror')
+
     _json["locators"]["genericLocator"] =
       command_target_array && command_target_array.length > 3
         ? command_target_array[3]
@@ -562,14 +508,11 @@ function addCommand(msg, auto, insertCommand) {
     _json["parameters"]["strategy"] = "textValue";
   }
 
-  // if (_json['command'] == 'select') {
-  //     _json["parameters"]['strategy'] = "text";
-  // }
-  console.log(_json["command"]);
+  console.log(_json);
   if (_json["command"] == "dragAndDrop") {
-    if (msg["evtType"] == "html5") {
+    if (msg["evtType"] == "html5" || msg["evtType"] == "dragAndDropObject") {
       let parm = _json["parameters"];
-      parm["dragType"] = "html5";
+      parm["dragType"] = msg["evtType"];
       //console.log(command_value);
       parm["targetLocators"] = {
         seleniumLocators:
