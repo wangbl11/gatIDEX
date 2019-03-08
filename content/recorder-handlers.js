@@ -222,6 +222,8 @@ Recorder.addEventHandler(
           // });
           return;
         }
+        // Special case of clicking element within <a>
+        _target = this.lookupClickableAncestor(_target, clickable);
         var top = event.pageY,
           left = event.pageX;
         let _off;
@@ -631,17 +633,31 @@ Recorder.addEventHandler(
             offsetXY(this.mousedown)
           );
         } else {
-          console.log("3");
-          this.record(
-            "mouseDown",
-            this.locatorBuilders.buildAll(this.mousedown.target),
-            ""
-          );
-          this.record(
-            "mouseUp",
-            this.locatorBuilders.buildAll(event.target),
-            ""
-          );
+          //GAT-5853:check mouse style, if pointer means clickable
+          const e = this.mousedown.target;
+          var _cursor = this.window
+            .getComputedStyle(e, null)
+            .getPropertyValue("cursor");
+          console.log(_cursor);
+          if (cursorClickableArray.indexOf(_cursor) >= 0) {
+            this.record(
+              "clickAt",
+              this.locatorBuilders.buildAll(e),
+              "mouseDown"
+            );
+          } else {
+            console.log("3");
+            this.record(
+              "mouseDown",
+              this.locatorBuilders.buildAll(this.mousedown.target),
+              ""
+            );
+            this.record(
+              "mouseUp",
+              this.locatorBuilders.buildAll(event.target),
+              ""
+            );
+          }
         }
       } else if (this.mousedown && this.mousedown.target === event.target) {
         /*
@@ -1027,20 +1043,13 @@ Recorder.prototype.findClickableElement = function(e) {
     e.hasAttribute("onclick") ||
     e.hasAttribute("on-click") ||
     e.hasAttribute("href") ||
-    tagName == "button" ||
-    tagName == "a" ||
-    _cursor == "pointer" ||
-    (tagName == "input" &&
-      (type == "submit" ||
-        type == "button" ||
-        type == "image" ||
-        type == "radio" ||
-        type == "checkbox" ||
-        type == "reset")) ||
+    clickableTag.indexOf(tagName) >= 0 ||
+    cursorClickableArray.indexOf(_cursor) >= 0 ||
+    (tagName == "input" && e && typeClickableArray.indexOf(type) >= 0) ||
     (e.hasAttribute("data-bind") &&
       e.getAttribute("data-bind").indexOf("click") >= 0)
   ) {
-    console.log("clickable");
+    console.log("clickable", tagName);
     return e;
   }
   //gat3895
@@ -1049,6 +1058,15 @@ Recorder.prototype.findClickableElement = function(e) {
     return e;
   }
 
+  //in table
+  var td = e.closest("td");
+  if (td && td.childNodes.length == 1) {
+    //still check whether span is the unique child of the td (4795,3167)
+    return td;
+  } else {
+    //gat-4195
+    return e;
+  }
   //find upstream abstract component
   for (let m = 0; m < expandableArray.length; m++) {
     let _switch = e.closest(expandableArray[m]);
@@ -1062,24 +1080,25 @@ Recorder.prototype.findClickableElement = function(e) {
   }
 };
 
-/*
-Recorder.prototype.findClickableElementBak = function(e) {
-    if (!e.tagName) return null;
-    var tagName = e.tagName.toLowerCase();
-    var type = e.type;
-    if (e.hasAttribute("onclick") || e.hasAttribute("href") || tagName == "button" ||
-        (tagName == "input" &&
-            (type == "submit" || type == "button" || type == "image" || type == "radio" || type == "checkbox" || type == "reset"))) {
-        return e;
-    } else {
-        if (e.parentNode != null) {
-            return this.findClickableElement(e.parentNode);
-        } else {
-            return null;
-        }
-    }
+Recorder.prototype.lookupClickableAncestor = function(target, clickable) {
+  if (clickable.localName == "a") return clickable;
+  console.log("[DEBUG] isSVG:", this.locatorBuilders.isSVG(target));
+  if (this.locatorBuilders.isSVG(target)) {
+    let svg = this.locatorBuilders.getAncestorByTag(target, "svg");
+    let rect = svg.getBoundingClientRect();
+    console.log(svg, rect);
+    if (
+      !(
+        (rect.width <= 48 && rect.height <= 48) ||
+        (rect.width == 58 && rect.height == 58)
+      )
+    )
+      return target;
+  }
+  let anchor = this.locatorBuilders.getAncestorByTag(target, "a");
+  if (anchor) return anchor;
+  return target;
 };
-*/
 
 //select / addSelect / removeSelect
 //this method is for <select> to initialize, in Selenium IDE it's disposed in 'mousedown' event

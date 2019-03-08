@@ -1,6 +1,15 @@
 var svgArray = ["path", "circle", "svg", "g", "rect", "text"];
 var expandableArray = [".oj-switch", "[role='combobox']"];
-
+var cursorClickableArray = ["pointer", "text"];
+var clickableTag = ["button", "a"];
+var typeClickableArray = [
+  "submit",
+  "button",
+  "image",
+  "radio",
+  "checkbox",
+  "reset"
+];
 function inputInExpand(elm) {
   var cls = elm.getAttribute("class");
   if (

@@ -127,23 +127,22 @@ class Recorder {
           //   let _found = currentParentWindow.document.querySelector(
           //     "iframe:nth-child(" + _idx + ")"
           //   );
-          if (_found) {
-            if (_found.contentWindow == currentWindow) {
-              let _finder = "(//iframe)[" + _idx + "]";
-              currentWindow = currentParentWindow;
-              _ret.push({
-                locators: [
-                  {
-                    finder: "xpath",
-                    value: [_finder]
-                  }
-                ]
-              });
-              break;
-            }
-          }
+
+          let _finder = "(//iframe)[" + _idx + "]";
+
+          _ret.push({
+            locators: [
+              {
+                finder: "xpath",
+                value: [_finder]
+              }
+            ]
+          });
+          break;
         }
+      currentWindow = currentParentWindow;
     }
+
     return _ret;
   }
 

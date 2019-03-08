@@ -338,7 +338,7 @@ function emitMessageToConsole(_type, _json) {
         }
       }
       lastStepMillisecond = _tempnow;
-      if (_json["command"] == "check" || _json["command"] == "mouseOver") {
+      if (customizedCommands.indexOf(_json["command"]) >= 0) {
         sleepNew(1000).then(() => {
           stompClient.send(
             chatRoomId,
@@ -485,7 +485,7 @@ function addCommand(msg, auto, insertCommand) {
         command_target_array && command_target_array.length > 2
           ? command_target_array[2]
           : {},
-      parameters: Array.isArray(command_value) ? {} : command_value,
+      parameters: Array.isArray(command_value) ? command_value[0] : command_value,
       winInfo: msg["winInfo"],
       optional: false
     };
