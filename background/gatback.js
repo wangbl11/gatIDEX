@@ -270,8 +270,10 @@ function emitMessageToConsole(_type, _json) {
     else if (isRecording) _send = true;
     else if (steps.length == 0) _send = true;
 
-    if (!_send || !stompClient) return;
-
+    if (!_send || !stompClient) {
+      lastStepMillisecond = Date.now();
+      return;
+    }
     console.log(_send);
 
     if (_json["optional"] == undefined) _json["optional"] = false;
@@ -317,7 +319,7 @@ function emitMessageToConsole(_type, _json) {
       let delayForPause = false;
       if (steps.length > 0) {
         let _elapse = Math.round((_tempnow - lastStepMillisecond) / 2000);
-        if (_elapse > 5) {
+        if (_elapse > 5 && _type !== "SELECT") {
           stepsCount++;
           let _wait = { command: "pause", parameters: { wait: _elapse } };
           compositeDisplayName(_wait);
@@ -485,7 +487,9 @@ function addCommand(msg, auto, insertCommand) {
         command_target_array && command_target_array.length > 2
           ? command_target_array[2]
           : {},
-      parameters: Array.isArray(command_value) ? command_value[0] : command_value,
+      parameters: Array.isArray(command_value)
+        ? command_value[0]
+        : command_value,
       winInfo: msg["winInfo"],
       optional: false
     };
