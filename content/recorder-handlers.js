@@ -153,14 +153,12 @@ Recorder.addEventHandler("type2", "keyup", function(event) {
     var isInIframe =
       this.window.frameElement && this.window.frameElement.nodeName == "IFRAME";
     if (isInIframe) {
-      //there is no setWindwo anymore,so here how to make it available for //html/body in a frame
-      //this.record("type2", '//html/body', '','keyup');
-      this.record(
-        "type2",
-        this.locatorBuilders.buildAll(event.target),
-        null,
-        "keyup"
-      );
+      //cache what we input in iframe rich editor
+      if (!this.cachedForRTE) {
+        this.cachedForRTETarget = this.locatorBuilders.buildAll(event.target);
+      }
+      this.cachedForRTE = event.target.innerHTML;
+      //console.log(this.cachedForRTE);
     }
   }
 });
@@ -301,6 +299,9 @@ Recorder.addEventHandler(
       var tagName = event.target.tagName.toLowerCase();
       var type = event.target.type;
       //only for input field(s)
+      if (this.clickTimer) {
+        clearTimeout(this.clickTimer);
+      }
       if (tagName == "input" && Recorder.inputTypes.indexOf(type) >= 0) {
         //enter key
         if (key == 13) {
@@ -963,6 +964,22 @@ Recorder.addEventHandler(
         }
         checkFocus = 0;
       }
+      return;
+    }
+    let target = event.target;
+    if (
+      target.nodeName &&
+      target.nodeName.toLowerCase() == "#document" &&
+      this.cachedForRTE
+    ) {
+      this.record(
+        "typeInFrame",
+        this.cachedForRTETarget,
+        this.cachedForRTE,
+        "input"
+      );
+      delete this.cachedForRTE;
+      delete this.cachedForRTETarget;
     }
   },
   true
@@ -1033,7 +1050,7 @@ Recorder.prototype.isOjectListExpand = function(e, tagName, parentNode) {
 };
 
 Recorder.prototype.findClickableElement = function(e) {
-  if (!e.tagName) return null;
+  if (!e || !e.tagName) return null;
   var tagName = e.tagName.toLowerCase();
   var type = e.type;
   var _cursor = this.window
@@ -1042,10 +1059,11 @@ Recorder.prototype.findClickableElement = function(e) {
   if (
     e.hasAttribute("onclick") ||
     e.hasAttribute("on-click") ||
+    e.hasAttribute("ng-click") ||
     e.hasAttribute("href") ||
     clickableTag.indexOf(tagName) >= 0 ||
-    cursorClickableArray.indexOf(_cursor) >= 0 ||
-    (tagName == "input" && e && typeClickableArray.indexOf(type) >= 0) ||
+    (cursorClickableArray.indexOf(_cursor) >= 0 && tagName !== "input") ||
+    (tagName == "input" && type && typeClickableArray.indexOf(type) >= 0) ||
     (e.hasAttribute("data-bind") &&
       e.getAttribute("data-bind").indexOf("click") >= 0)
   ) {
@@ -1058,24 +1076,34 @@ Recorder.prototype.findClickableElement = function(e) {
     return e;
   }
 
-  //in table
-  var td = e.closest("td");
-  if (td && td.childNodes.length == 1) {
-    //still check whether span is the unique child of the td (4795,3167)
-    return td;
-  } else {
-    //gat-4195
-    return e;
-  }
   //find upstream abstract component
   for (let m = 0; m < expandableArray.length; m++) {
     let _switch = e.closest(expandableArray[m]);
-    if (_switch) return e;
+    if (_switch) {
+      console.log("expandable.....");
+      return e;
+    }
+  }
+
+  //in table
+  var td = e.closest("td");
+  if (td) {
+    console.log("in td.....");
+    if (td.childNodes.length == 1) {
+      //still check whether span is the unique child of the td (4795,3167)
+      return td;
+    } else {
+      //gat-4195
+      if (tagName !== "input") return e;
+      return null;
+    }
   }
 
   if (e.parentNode != null) {
+    console.log("check parent.....");
     return this.findClickableElement(e.parentNode);
   } else {
+    console.log("no clickable.....");
     return null;
   }
 };

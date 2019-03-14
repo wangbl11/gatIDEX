@@ -325,6 +325,24 @@ LocatorBuilders.prototype.computeElementAttrs = function(e, el) {
       _json[one] = ele.getAttribute(one);
     }
   }
+  // Special case for <a>, since <a> element can looks like as link, button, or generic element
+  if (ele.localName == 'a') {
+    _json["type"] = 'element';
+    if (ele.hasAttribute('role'))
+      _json["type"] = ele.getAttribute('role');
+    else if (ele.hasAttribute('class') && ele.getAttribute('class').match(/button/i))
+      _json["type"] = 'button';
+    else if (ele.hasAttribute('href')) {
+      let href = ele.getAttribute('href').trim();
+      if (href != '' && href != '#' &&
+          !href.startsWith('mailto:') &&
+          !href.startsWith('javascript:') &&
+          !href.startsWith('/#') &&
+          !href.startsWith('#/') &&
+          !href.match(/^#\w+/i))
+        _json["type"] = 'link';
+    }
+  }
   return _json;
 };
 
@@ -958,6 +976,16 @@ LocatorBuilders.prototype.getSVGPath = function(elem, ancestorNode) {
   return svgPath;
 };
 
+LocatorBuilders.prototype.getAncestorByTag = function(elem, tagName) {
+  let tmpNode = elem;
+  while (tmpNode) {
+    if (tmpNode.localName == tagName) {
+      break;
+    }
+    tmpNode = tmpNode.parentNode;
+  }
+  return tmpNode;
+};
 LocatorBuilders.prototype.getParentDivElement = function(elem) {
   var parentTags = ["div", "tr"];
   var tmpNode = elem.parentNode;

@@ -417,7 +417,13 @@ function setStorage(key, val) {
 }
 
 var valueCommands = ["type", "clickAt", "check", "dragAndDrop", "select"];
-var typeCommands = ["type", "sendKeys", "editContent", "typeInCodeMirror"];
+var typeCommands = [
+  "type",
+  "sendKeys",
+  "editContent",
+  "typeInCodeMirror",
+  "typeInFrame"
+];
 
 function addTopWindow(winInfo) {
   var oneself = -1;

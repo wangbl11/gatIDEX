@@ -134,7 +134,7 @@ class Recorder {
             locators: [
               {
                 finder: "xpath",
-                value: [_finder]
+                values: [_finder]
               }
             ]
           });
@@ -258,7 +258,6 @@ class Recorder {
     actualFrameLocation
   ) {
     let self = this;
-    console.log(value);
     let _value;
     if (Array.isArray(value) && value.length > 0) _value = value;
     else {

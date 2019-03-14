@@ -65,9 +65,9 @@ function sshot(request, winInfo) {
         if (request && request.left) {
           left = request.left1;
           top = request.top1;
-          console.log(
-            left + "," + top + "," + request.left + "," + request.top
-          );
+          //   console.log(
+          //     left + "," + top + "," + request.left + "," + request.top
+          //   );
           width = request.width;
           height = request.height;
           if (winInfo && winInfo.type == "frame") {

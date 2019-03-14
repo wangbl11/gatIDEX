@@ -37,6 +37,12 @@ function canTrusted(event) {
   return false;
 }
 
+function removeHTMLTag(string) {
+  if (string) {
+    return string.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, "");
+  }
+  return string;
+}
 function grab(window) {
   var document = window.document;
   var documentElement = document.documentElement;
@@ -103,7 +109,7 @@ function offsetXY(event) {
                 left = 0;
                 break;
             }*/
-      console.log(_top);
+      //console.log(_top);
       if (_top == undefined) return event.offsetX + "," + event.offsetY;
       top -= _top;
       left -= _left;
