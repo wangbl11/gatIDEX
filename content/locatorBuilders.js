@@ -326,21 +326,26 @@ LocatorBuilders.prototype.computeElementAttrs = function(e, el) {
     }
   }
   // Special case for <a>, since <a> element can looks like as link, button, or generic element
-  if (ele.localName == 'a') {
-    _json["type"] = 'element';
-    if (ele.hasAttribute('role'))
-      _json["type"] = ele.getAttribute('role');
-    else if (ele.hasAttribute('class') && ele.getAttribute('class').match(/button/i))
-      _json["type"] = 'button';
-    else if (ele.hasAttribute('href')) {
-      let href = ele.getAttribute('href').trim();
-      if (href != '' && href != '#' &&
-          !href.startsWith('mailto:') &&
-          !href.startsWith('javascript:') &&
-          !href.startsWith('/#') &&
-          !href.startsWith('#/') &&
-          !href.match(/^#\w+/i))
-        _json["type"] = 'link';
+  if (ele.localName == "a") {
+    _json["type"] = "element";
+    if (ele.hasAttribute("role")) _json["type"] = ele.getAttribute("role");
+    else if (
+      ele.hasAttribute("class") &&
+      ele.getAttribute("class").match(/button/i)
+    )
+      _json["type"] = "button";
+    else if (ele.hasAttribute("href")) {
+      let href = ele.getAttribute("href").trim();
+      if (
+        href != "" &&
+        href != "#" &&
+        !href.startsWith("mailto:") &&
+        !href.startsWith("javascript:") &&
+        !href.startsWith("/#") &&
+        !href.startsWith("#/") &&
+        !href.match(/^#\w+/i)
+      )
+        _json["type"] = "link";
     }
   }
   return _json;
@@ -1571,41 +1576,7 @@ LocatorBuilders.add(
   },
   "xpath"
 );
-/*
-visibleStringLoc=" and not(ancestor::div[contains(@style,'display:none')]) and not(ancestor::div[contains(@style,'display: none')])";
-LocatorBuilders.add('uncle:text:back', function(e) {
-  var _nodeName=e.nodeName.toLowerCase();
-  if (_nodeName == 'a') {
-      var _text=this.ancestorText(e.parentNode);
-      if (_text!=null){
-        var _idx=_text.indexOf(']');
-        if (_idx>0)_idx++;
-      	if (e.hasAttribute('accesskey')) {
-      	  	//gat2972
-            var _key = e.getAttribute('accesskey');
-            var _key1=_key.toLowerCase();
-            var _key2=_key.toUpperCase();
-            var _txt1=_text+'/'+_nodeName+"[translate(@accesskey,'"+_key2+"','"+_key1+"')='"+_key1+"']";
-            if (_idx>1){
-              var _txt2=_text.insertAt(_idx,visibleStringLoc)+'/'+_nodeName+"[translate(@accesskey,'"+_key2+"','"+_key1+"')='"+_key1+"']";
-              return [this.preciseXPath(_txt2,e),this.preciseXPath(_txt1,e)];
-            }else {
-              return this.preciseXPath(_txt1,e);
-            }
-        }else{
-      	    var _text1=this.preciseXPath(_text+'/'+_nodeName,e);
-            if (_idx>1){
-               var _text2=this.preciseXPath(_text.insertAt(_idx,visibleStringLoc)+'/'+_nodeName,e);
-      	       return [_text2,_text1];
-            }else{
-              return _text1;
-            }
-        }
-      }
-  }
-  return null;
-});
-*/
+
 const TEXT_TAGS = ["button", "td", "span", "div"];
 const ELEM_TEXT_ATTRIBUTES = ["title"];
 const EXTRA_ATTRS = ["role"];
@@ -1710,76 +1681,60 @@ LocatorBuilders.add(
   "xpath:attributes",
   function(e) {
     const PREFERRED_ATTRIBUTES = [
-      "name",
+      "placeholder",
+      "title",
       "value",
       "class",
       "type",
       "action",
-      "onclick",
-      "id",
-      "title"
+      "onclick"
     ];
     var i = 0;
+    let ret = [];
+    const PREFERRED_ATTRIBUTES_Len = PREFERRED_ATTRIBUTES.length;
 
-    function attributesXPath(name, attNames, attributes) {
-      var locator = "//" + this.xpathHtmlElement(name) + "[";
-      var _attrval;
-      var _validCnt = 0;
-      for (i = 0; i < attNames.length; i++) {
-        var attName = attNames[i];
-        _attrval = this.attributeValue(attributes[attName]);
-        if (attName == "class") {
-          if (_attrval.indexOf(" ") >= 0) continue;
-        }
-        if (attName == "id") {
-          var _dyId = false;
-          for (var j = 0; j < LocatorBuilders._dynamicIDs.length; j++) {
-            if (_attrval.match(LocatorBuilders._dynamicIDs[j])) {
-              _dyId = true;
-              break;
-            }
-          }
-          if (_dyId) continue;
-        }
-        if (_validCnt > 0) {
-          locator += " and ";
-        }
-        var attName = attNames[i];
-        locator += "@" + attName + "=" + _attrval;
-        _validCnt++;
-      }
-      locator += "]";
-      if (_validCnt == 0) return null;
+    function attributesXPath(name, loc) {
+      var locator = "//" + this.xpathHtmlElement(name) + "[" + loc + "]";
       return this.preciseXPath(locator, e);
     }
+    try {
+      if (e.attributes) {
+        // var atts = e.attributes;
+        // var attsMap = {};
+        // for (i = 0; i < atts.length; i++) {
+        //   var att = atts[i];
+        //   attsMap[att.name] = att.value;
+        // }
+        let names = [];
+        let avalues = [];
 
-    if (e.attributes) {
-      var atts = e.attributes;
-      var attsMap = {};
-      for (i = 0; i < atts.length; i++) {
-        var att = atts[i];
-        attsMap[att.name] = att.value;
-      }
-      var names = [];
-      // try preferred attributes
-      for (i = 0; i < PREFERRED_ATTRIBUTES.length; i++) {
-        var name = PREFERRED_ATTRIBUTES[i];
-        if (attsMap[name] != null) {
-          names.push(name);
-          var locator = attributesXPath.call(
-            this,
-            e.nodeName.toLowerCase(),
-            names,
-            attsMap
-          );
-          if (locator != null)
-            if (e == this.findElement(locator)) {
-              return locator;
-            }
+        for (let i = 0; i < PREFERRED_ATTRIBUTES_Len; i++) {
+          let _now = PREFERRED_ATTRIBUTES[i];
+          if (e.hasAttribute(_now)) {
+            //console.log(_now);
+            names.push(_now);
+            const _val = this.attributeValue(e.getAttribute(_now));
+            //console.log(_val);
+            avalues.push(_val);
+          }
+        }
+        const nodeName = e.nodeName.toLowerCase();
+        let _valids = randomAttributes(avalues, names, 0, 1);
+        if (_valids == null || _valids.length < 1) return null;
+        const _plen = _valids.length;
+        for (let i = 0; i < _plen; i++) {
+          //console.log(_valids[i]);
+          let locator = attributesXPath.call(this, nodeName, _valids[i]);
+          //console.log(locator);
+          if (locator != null) {
+            ret.push(locator);
+          }
         }
       }
+    } catch (err) {
+      console.log(err.message);
     }
-    return null;
+    return ret;
   },
   "xpath"
 );

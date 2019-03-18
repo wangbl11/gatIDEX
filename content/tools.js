@@ -10,6 +10,23 @@ var typeClickableArray = [
   "checkbox",
   "reset"
 ];
+function randomAttributes(attrsMap, attrs, from, size) {
+  if (size < 1) return null;
+  const len = attrs.length;
+  let _ret = [];
+  for (let i = from; i < len - from - size; i++) {
+    let _now = attrs[i];
+    let _next = randomAttributes(attrsMap, attrs, i + 1, size - 1);
+    let locator = "@" + _now + "=" + attrsMap[i];
+    if (_next != null && _next.length > 0) {
+      for (let j = 0; j < _next.length; j++) {
+        locator = locator + " and " + _next[j];
+        _ret.push(locator);
+      }
+    } else _ret.push(locator);
+  }
+  return _ret;
+}
 function inputInExpand(elm) {
   var cls = elm.getAttribute("class");
   if (

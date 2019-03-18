@@ -153,7 +153,9 @@ function compositeCommand(targetCmd, target) {
       }
       if (_mylabel && _mylabel.length > 0)
         _mylabel = _mylabel.replace(/\s/g, "").substring(0, 10);
-      _json["parameters"] = { variableName: _mylabel };
+      _json["parameters"] = {
+        variableName: _mylabel.length == 0 ? "assignVar" : _mylabel
+      };
       break;
     case "type":
       _json["parameters"] = { strategy: "text" };
