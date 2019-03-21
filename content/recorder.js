@@ -17,6 +17,7 @@
 
 class Recorder {
   constructor(window) {
+    console.log("%%%%%%%%%recorder.js%%%%%%%%%%%%%");
     this.window = window;
     this.recordingIdx = -1;
     this.attached = false;
@@ -24,7 +25,6 @@ class Recorder {
 
     this.lastSlideValue = [0, 0];
     try {
-      console.log(window.frameElement);
       console.log(window != window.top);
       if (window != window.top) {
         if (window.frameElement) {
@@ -36,13 +36,24 @@ class Recorder {
           //not same origin
           let _temp = this.getFrameLocation();
           this.locators = _temp;
-          console.log(JSON.stringify(_temp));
+          //console.log(JSON.stringify(_temp));
         }
       }
     } catch (e) {
       console.log(e.message);
     }
     console.log("finish construct Recorder....");
+    //browser.runtime.onMessage.addListener(startShowElement);
+    console.log("~~~~~~~~called when every page load");
+    browser.runtime
+      .sendMessage({
+        attachRecorderRequest: true
+      })
+      .catch(function(reason) {
+        // Failed silently if receiveing end does not exist
+        console.log(reason.message);
+      });
+    //console.log('~~~~~~~~called when every page load');
   }
 
   // This part of code is copyright by Software Freedom Conservancy(SFC)
@@ -69,26 +80,30 @@ class Recorder {
     this.attached = true;
     this.eventListeners = {};
     var self = this;
-    for (let eventKey in Recorder.eventHandlers) {
-      var eventInfo = this.parseEventKey(eventKey);
-      var eventName = eventInfo.eventName;
-      var capture = eventInfo.capture;
-      // create new function so that the variables have new scope.
-      function register() {
-        var handlers = Recorder.eventHandlers[eventKey];
-        var listener = function(event) {
-          for (var i = 0; i < handlers.length; i++) {
-            handlers[i].call(self, event);
-          }
-        };
-        this.window.document.addEventListener(eventName, listener, capture);
-        this.window.onpopstate = function(event) {
-          //when user click goback
-          console.log("onpopstate~~~~~~~user click goback~~~~~~~~~~~");
-        };
-        this.eventListeners[eventKey] = listener;
+    try {
+      for (let eventKey in Recorder.eventHandlers) {
+        var eventInfo = this.parseEventKey(eventKey);
+        var eventName = eventInfo.eventName;
+        var capture = eventInfo.capture;
+        // create new function so that the variables have new scope.
+        function register() {
+          var handlers = Recorder.eventHandlers[eventKey];
+          var listener = function(event) {
+            for (var i = 0; i < handlers.length; i++) {
+              handlers[i].call(self, event);
+            }
+          };
+          this.window.document.addEventListener(eventName, listener, capture);
+          this.window.onpopstate = function(event) {
+            //when user click goback
+            console.log("onpopstate~~~~~~~user click goback~~~~~~~~~~~");
+          };
+          this.eventListeners[eventKey] = listener;
+        }
+        register.call(this);
       }
-      register.call(this);
+    } catch (e) {
+      console.log(e.message);
     }
   }
 
@@ -117,8 +132,8 @@ class Recorder {
     let frameLocation = "";
     let _ret = [];
     while (currentWindow !== window.top) {
-      console.log(JSON.stringify(currentWindow.location));
       currentParentWindow = currentWindow.parent;
+      console.log(JSON.stringify(currentParentWindow.frames.length));
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
           let _idx = idx + 1;
@@ -312,4 +327,3 @@ function startShowElement(message, sender, sendResponse) {
     });
   }
 }
-//browser.runtime.onMessage.addListener(startShowElement);

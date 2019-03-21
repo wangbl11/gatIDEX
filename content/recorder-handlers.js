@@ -649,15 +649,15 @@ Recorder.addEventHandler(
           } else {
             console.log("3");
             this.record(
-              "mouseDown",
+              "clickAt",
               this.locatorBuilders.buildAll(this.mousedown.target),
-              ""
+              "mouseDown"
             );
-            this.record(
-              "mouseUp",
-              this.locatorBuilders.buildAll(event.target),
-              ""
-            );
+            // this.record(
+            //   "mouseUp",
+            //   this.locatorBuilders.buildAll(event.target),
+            //   ""
+            // );
           }
         }
       } else if (this.mousedown && this.mousedown.target === event.target) {
@@ -985,17 +985,6 @@ Recorder.addEventHandler(
   true
 );
 // END
-
-//console.log('~~~~~~~~called when every page load');
-browser.runtime
-  .sendMessage({
-    attachRecorderRequest: true
-  })
-  .catch(function(reason) {
-    // Failed silently if receiveing end does not exist
-    console.log(reason.message);
-  });
-//console.log('~~~~~~~~called when every page load');
 
 // Copyright 2005 Shinya Kasatani
 Recorder.prototype.getOptionLocator = function(option) {
