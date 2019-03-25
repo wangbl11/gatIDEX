@@ -46,6 +46,13 @@ Recorder.addEventHandler("type", "change", function(event) {
     var type = target.type;
     let _evtType = "change";
     console.log(tagName);
+    if (this.clickTextable) {
+      if (this.clickTextable == target) {
+        console.log("delete cached clickTextable");
+        delete this.clickTextable;
+      }
+    }
+
     if ("input" == tagName && Recorder.inputTypes.indexOf(type) >= 0) {
       if (target.value.length > 0) {
         if (inputInExpand(target)) _evtType = "select";
@@ -212,6 +219,15 @@ Recorder.addEventHandler(
       if (tagName == "div" && _target.scrollWidth > _target.clientWidth) return;
 
       if (!preventClickTwice) {
+        if (this.clickTextable) {
+          if (this.clickTextable != _target) {
+            console.log("emit cached clickTextable");
+            let _locators = this.locatorBuilders.buildAll(this.clickTextable);
+            delete this.clickTextable;
+            this.record("clickAt", _locators, "0,0", "click");
+          }
+        }
+
         var clickable = this.findClickableElement(_target);
         if (!clickable) {
           this.clickLocator = true;
@@ -1042,6 +1058,20 @@ Recorder.prototype.findClickableElement = function(e) {
   if (!e || !e.tagName) return null;
   var tagName = e.tagName.toLowerCase();
   var type = e.type;
+
+  //
+  if (tagName == "input" && type && typeTextableArray.indexOf(type) >= 0) {
+    //console.log("cache click inputTextable....");
+    this.clickTextable = e;
+    // this.clickTextable = {
+    //   command: "clickAt",
+    //   locators: this.locatorBuilders.buildAll(e.target),
+    //   offset: "0,0",
+    //   evt: "click"
+    // };
+    return null;
+  }
+  //
   var _cursor = this.window
     .getComputedStyle(e, null)
     .getPropertyValue("cursor");

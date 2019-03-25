@@ -1,5 +1,6 @@
 var svgArray = ["path", "circle", "svg", "g", "rect", "text"];
-var expandableArray = [".oj-switch", "[role='combobox']"];
+//GAT-5865: add "li[role='row']" to check listView
+var expandableArray = [".oj-switch", "[role='combobox']", "li[role='row']"];
 var cursorClickableArray = ["pointer", "text"];
 var clickableTag = ["button", "a"];
 var typeClickableArray = [
@@ -10,6 +11,7 @@ var typeClickableArray = [
   "checkbox",
   "reset"
 ];
+var typeTextableArray = ["text", "password"];
 function randomAttributes(attrsMap, attrs, from, size) {
   if (size < 1) return null;
   const len = attrs.length;
@@ -60,6 +62,7 @@ function removeHTMLTag(string) {
   }
   return string;
 }
+
 function grab(window) {
   var document = window.document;
   var documentElement = document.documentElement;

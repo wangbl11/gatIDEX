@@ -28,13 +28,13 @@ class Recorder {
       console.log(window != window.top);
       if (window != window.top) {
         if (window.frameElement) {
-          let _temp = this.getFrameLocation1();
+          let _temp = this.getFrameLocationSameOrigin();
           console.log(JSON.stringify(_temp));
           this.locators = _temp && _temp.length > 0 ? _temp[0] : [];
           this.positions = _temp && _temp.length > 1 ? _temp[1] : [];
         } else {
           //not same origin
-          let _temp = this.getFrameLocation();
+          let _temp = this.getFrameLocationCrossOrigin();
           this.locators = _temp;
           //console.log(JSON.stringify(_temp));
         }
@@ -126,14 +126,15 @@ class Recorder {
     delete this.eventListeners;
   }
 
-  getFrameLocation() {
+  getFrameLocationCrossOrigin() {
     let currentWindow = window;
     let currentParentWindow;
     let frameLocation = "";
     let _ret = [];
     while (currentWindow !== window.top) {
+      console.log(JSON.stringify(currentWindow.location));
       currentParentWindow = currentWindow.parent;
-      console.log(JSON.stringify(currentParentWindow.frames.length));
+      //console.log(JSON.stringify(currentParentWindow.frames.length));
       for (let idx = 0; idx < currentParentWindow.frames.length; idx++)
         if (currentParentWindow.frames[idx] === currentWindow) {
           let _idx = idx + 1;
@@ -143,7 +144,10 @@ class Recorder {
           //     "iframe:nth-child(" + _idx + ")"
           //   );
 
-          let _finder = "(//iframe)[" + _idx + "]";
+          let _finder =
+            "(//*[local-name()='iframe' or local-name()='frame'])[" +
+            _idx +
+            "]";
 
           _ret.push({
             locators: [
@@ -173,7 +177,7 @@ class Recorder {
     return _ret;
   }
 
-  getFrameLocation1() {
+  getFrameLocationSameOrigin() {
     console.log("get frame information");
     let currentWindow = window;
     let currentParentWindow;
@@ -280,7 +284,13 @@ class Recorder {
         value: value
       };
     }
-    console.log(JSON.stringify(_value));
+    //console.log(JSON.stringify(_value));
+    if (this.clickTextable) {
+      console.log("~~~~~~~ record ~~~~~~~ ");
+      let _locators = this.locatorBuilders.buildAll(this.clickTextable);
+      delete this.clickTextable;
+      this.record("clickAt", _locators, "0,0", "click");
+    }
 
     var _json = {
       command: command,
@@ -327,3 +337,4 @@ function startShowElement(message, sender, sendResponse) {
     });
   }
 }
+//browser.runtime.onMessage.addListener(startShowElement);
