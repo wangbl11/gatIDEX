@@ -460,6 +460,22 @@ function addTopWindow(winInfo) {
   }
   return -1;
 }
+function getDefaultParamName(_json) {
+  let _mylabel = "";
+  if (_json["locators"]["genericLocator"]) {
+    let _gec = _json["locators"]["genericLocator"];
+    _gec = _gec["gatfind_elements"];
+    if (_gec && _gec.length > 0) {
+      _gec = _gec[0];
+      if (_gec && _gec["texts"] && _gec["texts"].length > 0) {
+        _mylabel = _gec["texts"][0];
+      }
+    }
+  }
+  if (_mylabel && _mylabel.length > 0)
+    _mylabel = _mylabel.replace(/\s/g, "").substring(0, 10);
+  return _mylabel;
+}
 
 function addCommand(msg, auto, insertCommand) {
   if (!isRecording && steps.length > 0) return;
@@ -483,7 +499,11 @@ function addCommand(msg, auto, insertCommand) {
         seleniumLocators:
           command_target_array && command_target_array.length > 0
             ? command_target_array[0]
-            : []
+            : [],
+        genericLocator:
+          command_target_array && command_target_array.length > 3
+            ? command_target_array[3]
+            : {}
       },
       elementAttributes:
         command_target_array && command_target_array.length > 1
@@ -499,47 +519,33 @@ function addCommand(msg, auto, insertCommand) {
       winInfo: msg["winInfo"],
       optional: false
     };
+
     let idx = typeCommands.indexOf(command_name);
     if (idx >= 0) {
       if (idx > 1) _json["parameters"]["mode"] = command_name;
       _json["command"] = "type";
       command_name = "type";
+      _json["parameters"]["strategy"] = "textValue";
+      let _myparam = getDefaultParamName(_json);
+      if (_myparam && _myparam.length > 0)
+        _json["parameters"]["parametrize"] = [
+          {
+            enabled: false,
+            name: _myparam,
+            ref: "value",
+            randomize: {
+              enabled: false,
+              type: "string"
+            }
+          }
+        ];
     }
-
-    _json["locators"]["genericLocator"] =
-      command_target_array && command_target_array.length > 3
-        ? command_target_array[3]
-        : {};
   }
   //composite display name
   compositeDisplayName(_json);
 
-  if (_json["command"] == "type") {
-    _json["parameters"]["strategy"] = "textValue";
-  }
-
   console.log(_json);
-  if (_json["command"] == "dragAndDrop") {
-    if (msg["evtType"] == "html5" || msg["evtType"] == "dragAndDropObject") {
-      let parm = _json["parameters"];
-      parm["dragType"] = msg["evtType"];
-      //console.log(command_value);
-      parm["targetLocators"] = {
-        seleniumLocators:
-          command_value && command_value.length > 0 ? command_value[0] : [],
-        genericLocator:
-          command_value && command_value.length > 3 ? command_value[3] : {}
-      };
 
-      parm["targetElementAttributes"] =
-        command_value && command_value.length > 1 ? command_value[1] : {};
-    } else if (msg["evtType"] == "slider") {
-      console.log(msg["evtType"]);
-      let parm = {};
-      parm["dragType"] = "slider";
-      //parm['value']=command_value;
-    }
-  }
   //console.log(JSON.stringify(_json));
   //capture screenshot
   sshot(_json["coordinates"], _json["winInfo"]).then(
@@ -592,16 +598,16 @@ function fromContentScript(message, sender, sendResponse) {
   } else if (message.finishSelect) {
     //finish select
     if (isSelecting) {
-      // isSelecting=false;
-      // if (isRecording)
-      //   disableSelect().then(enableRecording());
-      // else
-      //   disableSelect();
-
       if (message.selectTarget) {
         let _json = message["step"];
         //console.log(JSON.stringify(_json["coordinates"]));
         compositeDisplayName(_json);
+        if (_json["command"] == "assign") {
+          let _mylabel = getDefaultParamName(_json);
+          _json["parameters"] = {
+            variableName: _mylabel.length == 0 ? "assignVar" : _mylabel
+          };
+        }
         sshot(_json["coordinates"], _json["winInfo"]).then(function(d) {
           _json["img"] = d;
           if (_json["locators"]["genericLocator"]) {
@@ -636,7 +642,7 @@ function fromContentScript(message, sender, sendResponse) {
     }
   }
 }
-
+//dispose customized step
 browser.runtime.onMessage.addListener(fromContentScript);
 
 //initialize background recorder

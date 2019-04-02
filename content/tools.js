@@ -196,3 +196,13 @@ function encodeText(text) {
   //text = text.replace(/\n/g, "<br />");
   return text;
 }
+function get_element_registry(element) {
+  var cache = Event.cache;
+  if (element === window) return 0;
+  if (typeof element._prototypeUID === "undefined") {
+    element._prototypeUID = Element.Storage.UID++;
+  }
+  var uid = element._prototypeUID;
+  if (!cache[uid]) cache[uid] = { element: element };
+  return cache[uid];
+}

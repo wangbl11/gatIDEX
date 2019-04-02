@@ -278,8 +278,20 @@ class Recorder {
   ) {
     let self = this;
     let _value;
-    if (Array.isArray(value) && value.length > 0) _value = value;
-    else {
+    if (Array.isArray(value) && value.length > 0) {
+      if ((command = "dragAndDrop")) {
+        _value = {
+          dragType: evtType,
+          targetLocators: {
+            seleniumLocators: value && value.length > 0 ? value[0] : [],
+            genericLocator: value && value.length > 3 ? value[3] : {}
+          },
+          targetElementAttributes: value && value.length > 1 ? value[1] : {},
+          targetCoordinates: value && value.length > 2 ? value[2] : {}
+        };
+        console.log(_value);
+      } else _value = value;
+    } else {
       _value = {
         value: value
       };

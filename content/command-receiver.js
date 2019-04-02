@@ -140,25 +140,6 @@ function compositeCommand(targetCmd, target) {
       break;
     case "assign":
       _json["optional"] = false;
-      let _mylabel = "";
-      if (_json["locators"]["genericLocator"]) {
-        let _gec = _json["locators"]["genericLocator"];
-        _gec = _gec["gatfind_elements"];
-        if (_gec && _gec.length > 0) {
-          _gec = _gec[0];
-          if (_gec && _gec["texts"] && _gec["texts"].length > 0) {
-            _mylabel = _gec["texts"][0];
-          }
-        }
-      }
-      if (_mylabel && _mylabel.length > 0)
-        _mylabel = _mylabel.replace(/\s/g, "").substring(0, 10);
-      _json["parameters"] = {
-        variableName: _mylabel.length == 0 ? "assignVar" : _mylabel
-      };
-      break;
-    case "type":
-      _json["parameters"] = { strategy: "text" };
       break;
     default: //all other steps
   }

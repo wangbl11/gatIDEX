@@ -213,6 +213,7 @@ Recorder.addEventHandler(
   "click",
   function(event) {
     console.log("click~~~~~~~~~~~");
+
     if (event.button == 0 && !preventClick && canTrusted(event)) {
       var _target = event.target;
       var tagName = _target.tagName.toLowerCase();
@@ -311,6 +312,7 @@ Recorder.addEventHandler(
   "keydown",
   function(event) {
     if (event.target.tagName) {
+      //console.log(JSON.stringify(get_element_registry(event.target)));
       var key = event.keyCode;
       var tagName = event.target.tagName.toLowerCase();
       var type = event.target.type;
@@ -601,32 +603,44 @@ Recorder.addEventHandler(
         );
         delete this._lastDrag;
         this._lastDrag = null;
-      } else
+      } else {
         console.log(
           this.mouseoverQ ? "over: " + this.mouseoverQ.length : "undefined"
         );
-      /* disable for drag/drop mouse wheel; it only check offset of mousedown and mouseup
-        // it does not check whether the target itself offset change
-        if (this.selectMousedown && event.button === 0 && (x + y) && (event.clientX < window.document.documentElement.clientWidth && event.clientY < window.document.documentElement.clientHeight) && getSelectionText() === '') {
-            var sourceRelateX = this.selectMousedown.pageX - this.selectMousedown.target.getBoundingClientRect().left - window.scrollX;
-            var sourceRelateY = this.selectMousedown.pageY - this.selectMousedown.target.getBoundingClientRect().top - window.scrollY;
-            var targetRelateX, targetRelateY;
-            if (!!this.mouseoverQ.length && this.mouseoverQ.length > 1 && this.mouseoverQ[1] && this.mouseoverQ[1].relatedTarget == this.mouseoverQ[0].target && this.mouseoverQ[0].target == event.target) {
-                console.log('in which scenario~~~~~~~~~~~~~~~');
-                targetRelateX = event.pageX - this.mouseoverQ[1].target.getBoundingClientRect().left - window.scrollX;
-                targetRelateY = event.pageY - this.mouseoverQ[1].target.getBoundingClientRect().top - window.scrollY;
-                this.record("mouseDownAt", this.locatorBuilders.buildAll(this.selectMousedown.target), sourceRelateX + ',' + sourceRelateY);
-                this.record("mouseMoveAt", this.locatorBuilders.buildAll(this.mouseoverQ[1].target), targetRelateX + ',' + targetRelateY);
-                this.record("mouseUpAt", this.locatorBuilders.buildAll(this.mouseoverQ[1].target), targetRelateX + ',' + targetRelateY);
-            } else {
-                targetRelateX = event.pageX - event.target.getBoundingClientRect().left - window.scrollX;
-                targetRelateY = event.pageY - event.target.getBoundingClientRect().top - window.scrollY;
-                this.record("mouseDownAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
-                this.record("mouseMoveAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);
-                this.record("mouseUpAt", this.locatorBuilders.buildAll(event.target), targetRelateX + ',' + targetRelateY);                
-            }
+
+        let _len = this.mouseoverQ.length;
+        /*
+        for (let u = 0; u < _len; u++) {
+          console.log(
+            this.mouseoverQ
+              ? "over: " +
+                  JSON.stringify(
+                    this.locatorBuilders.buildAll(this.mouseoverQ[u].target)
+                  )
+              : "undefined"
+          );
+          if (this.mouseoverQ[u].relatedTarget)
+            console.log(
+              this.mouseoverQ
+                ? "over: " +
+                    JSON.stringify(
+                      this.locatorBuilders.buildAll(
+                        this.mouseoverQ[u].relatedTarget
+                      )
+                    )
+                : "undefined"
+            );
         }
         */
+        if (!!_len && _len > 1) {
+          this.record(
+            "dragAndDrop",
+            this.locatorBuilders.buildAll(this.selectMousedown.target),
+            this.locatorBuilders.buildAll(this.mouseoverQ[1].target),
+            "dragAndDropObject"
+          );
+        }
+      }
     } else {
       console.log("2");
       delete this.clickLocator;
