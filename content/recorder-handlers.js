@@ -212,11 +212,10 @@ Recorder.addEventHandler(
   "clickAt",
   "click",
   function(event) {
-    console.log("click~~~~~~~~~~~");
-
     if (event.button == 0 && !preventClick && canTrusted(event)) {
       var _target = event.target;
       var tagName = _target.tagName.toLowerCase();
+      console.log("click~~~~~~~~~~~" + tagName);
       if (tagName == "div" && _target.scrollWidth > _target.clientWidth) return;
 
       if (!preventClickTwice) {

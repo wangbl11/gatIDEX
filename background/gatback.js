@@ -334,7 +334,9 @@ function emitMessageToConsole(_type, _json) {
           _sleepBefore = _elapse;
         }
         if (_json["parameters"]) {
-          _json["parameters"]["sleepBefore"] = _sleepBefore;
+          //gat-6135
+          _json["parameters"]["sleepBefore"] =
+            _type == "SELECT" ? Math.round(_sleepBefore / 6) : _sleepBefore;
         } else {
           _json["parameters"] = { sleepBefore: _sleepBefore };
         }
